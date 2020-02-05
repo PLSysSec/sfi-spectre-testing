@@ -23,5 +23,8 @@ extern "C"
 
 int main(int argc, char** argv)
 {
-    singleBranch(argc);
+    int val = singleBranch(argc);
+    if (val != 5) {
+        return -1;
+    }
 }

@@ -50,5 +50,13 @@ out/test.so: out/test.wasm $(LUCET)
 
 build: out/test.so
 
+test: build
+	echo "-------------------" && \
+	echo "Testing" && \
+	echo "-------------------" && \
+	$(LUCET_SRC)/target/debug/lucet-wasi ./out/test.so --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" && \
+	$(LUCET_SRC)/target/debug/lucet-wasi ./out/test_spectre.so --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" && \
+	echo "OK."
+
 clean:
 	rm -rf out
