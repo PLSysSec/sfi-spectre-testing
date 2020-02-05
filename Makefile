@@ -20,7 +20,8 @@ define generate_lucet_obj_files =
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		out/$(1).wasm -o out/$(1).so
+		out/$(1).wasm -o out/$(1).so && \
+	objdump -d out/$(1).so > out/$(1)_so.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -38,7 +39,8 @@ define generate_lucet_obj_files =
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-mitagations-enable \
-		out/$(1).wasm -o out/$(1)_spectre.so
+		out/$(1).wasm -o out/$(1)_spectre.so && \
+	objdump -d out/$(1)_spectre.so > out/$(1)_spectre_so.asm
 endef
 
 out/test.wasm: basic_test/test.cpp
