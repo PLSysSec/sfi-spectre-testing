@@ -58,6 +58,8 @@ test: build
 	echo "-------------------" && \
 	$(LUCET_SRC)/target/debug/lucet-wasi ./out/test.so --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" && \
 	$(LUCET_SRC)/target/debug/lucet-wasi ./out/test_spectre.so --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" && \
+	./check_mitigations.py --function_filter "guest_func*" ./out/test_spectre.asm && \
+	./check_mitigations.py --function_filter "guest_func*" ./out/test_spectre_so.asm && \
 	echo "OK."
 
 clean:
