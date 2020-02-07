@@ -18,6 +18,10 @@ extern "C"
         } else {
             printf("else side\n");
         }
+
+        for(int i = 0; i < val; i++){
+            printf("Val: %d\n", val);
+        }
     }
 }
 

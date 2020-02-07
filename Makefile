@@ -29,7 +29,7 @@ define generate_lucet_obj_files =
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--emit obj \
-		--spectre-mitagations-enable \
+		--spectre-mitigations-enable \
 		out/$(1).wasm -o out/$(1)_spectre.o && \
 	objdump -d out/$(1)_spectre.o > out/$(1)_spectre.asm
 
@@ -38,7 +38,7 @@ define generate_lucet_obj_files =
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		--spectre-mitagations-enable \
+		--spectre-mitigations-enable \
 		out/$(1).wasm -o out/$(1)_spectre.so && \
 	objdump -d out/$(1)_spectre.so > out/$(1)_spectre_so.asm
 endef
@@ -47,19 +47,20 @@ out/test.wasm: basic_test/test.cpp
 	mkdir -p out && \
 	/opt/wasi-sdk/bin/clang++ --sysroot /opt/wasi-sdk/share/wasi-sysroot/ -Wl,--export-all -O3 $< -o $@
 
-out/test.so: out/test.wasm $(LUCET)
-	$(call generate_lucet_obj_files,test)
+out/.build_ts: out/test.wasm $(LUCET)
+	$(call generate_lucet_obj_files,test) && \
+	touch out/.build_ts
 
-build: out/test.so
+build: out/.build_ts
 
 test: build
 	echo "-------------------" && \
 	echo "Testing" && \
 	echo "-------------------" && \
 	$(LUCET_SRC)/target/debug/lucet-wasi ./out/test.so --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" && \
-	$(LUCET_SRC)/target/debug/lucet-wasi ./out/test_spectre.so --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" && \
-	./check_mitigations.py --function_filter "guest_func*" ./out/test_spectre.asm && \
-	./check_mitigations.py --function_filter "guest_func*" ./out/test_spectre_so.asm && \
+	$(LUCET_SRC)/target/debug/lucet-wasi ./out/test_spectre.so --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB"; \
+	./check_mitigations.py --function_filter "guest_func_printBranch" ./out/test_spectre.asm; \
+	./check_mitigations.py --function_filter "guest_func_printBranch" ./out/test_spectre_so.asm; \
 	echo "OK."
 
 clean:

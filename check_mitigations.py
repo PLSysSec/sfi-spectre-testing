@@ -51,6 +51,21 @@ def get_func_offset(line):
     hex_str = "0x" + match.group(1)
     return int(hex_str, 0)
 
+instruction_pattern = re.compile("\s*[0-9a-fA-F]+:\t([0-9a-fA-F][0-9a-fA-F]\s+)+.*\n?")
+
+#    3633:	75 a1                	jne    35d6 <guest_func_24+0x35d6>
+def is_instruction(line):
+    match = instruction_pattern.fullmatch(line)
+    return match
+
+instruction_size_pattern = re.compile("\s*[0-9a-fA-F]+:\s+(([0-9a-fA-F]{2}\s)+)")
+
+def get_instruction_size(line):
+    match = instruction_size_pattern.search(line)
+    byte_vals = match.group(1)
+    bytes_len = byte_vals.count(" ")
+    return bytes_len
+
 #    3633:	75 a1                	jne    35d6 <guest_func_24+0x35d6>
 jump_pattern = re.compile(".*?\t.*?\tj.*\n?")
 #     2e9b:	e9 d0 fe ff ff       	jmpq   2d70 <.plt>
@@ -128,6 +143,16 @@ def check_alignment(args, line, line_num, function_name, alignment_block, offset
     else:
         print_ok(out_str, args.loginfo)
 
+def check_within_tblock(args, line, line_num, function_name, offset):
+    inst_size = get_instruction_size(line)
+    tblock_size = args.spectre_tblock_size
+    space_left_in_tblock = tblock_size - (offset % tblock_size)
+    if space_left_in_tblock < inst_size:
+        out_str = args.input_file + ":" + str(line_num) + \
+        " Func: " + function_name + \
+        " Instrucion not within transaction block"
+        print_error(out_str, args.limit)
+
 
 STATE_SCANNING = 0
 STATE_FOUND_FUNCTION = 1
@@ -143,9 +168,11 @@ def process_line(args, line, line_num, state, function_name):
     elif state == STATE_FOUND_FUNCTION and is_end_of_function(line):
         state = STATE_SCANNING
         function_name = ""
-    elif state == STATE_FOUND_FUNCTION:
+    elif state == STATE_FOUND_FUNCTION and is_instruction(line):
         offset = get_line_offset(line)
         alignment_block = args.spectre_tblock_size
+        if args.spectre_tblock_enable:
+            check_within_tblock(args, line, line_num, function_name, offset)
         # todo check for interesting instructions
     return (state, function_name)
 
@@ -171,6 +198,7 @@ def main():
     parser.add_argument("--spectre-tblock-size", type=int, default=32, help="Value used as the bundle size for instructions---similar to native client.")
     parser.add_argument("--spectre-tblocks-in-ablock", type=int, default=4, help="Number of transaction blocks in alignment block. Alignment blocks help align instructions.")
     parser.add_argument("--spectre-function-align-enable", type=str2bool, default=True, help="Whether to align the each function.")
+    parser.add_argument("--spectre-tblock-enable", type=str2bool, default=True, help="Whether to align the each function.")
     args = parser.parse_args()
     args.func_match_pat = re.compile(args.function_filter.replace('*', '.*'))
 
