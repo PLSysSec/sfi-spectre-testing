@@ -93,6 +93,14 @@ def is_indirect_call_instruction(line):
     match = indirect_call_pattern.fullmatch(line)
     return match
 
+# 11a5b:	e8 20 62 00 00       	callq  17c80 <guest_func_puts>
+# 7874:	ff d0                	callq  *%rax
+call_pattern = re.compile(".*?\t.*?\tcall[a-z]*\s+.*\n?")
+def is_call_instruction(line):
+    match = call_pattern.fullmatch(line)
+    return match
+
+
 offset_pattern = re.compile("\s*([0-9a-fA-F]+):.*")
 
 def get_line_offset(line):
@@ -173,6 +181,10 @@ def process_line(args, line, line_num, state, function_name):
         alignment_block = args.spectre_tblock_size
         if args.spectre_tblock_enable:
             check_within_tblock(args, line, line_num, function_name, offset)
+            if is_call_instruction(line):
+                inst_size = get_instruction_size(line)
+                # instruction needs to end on the last byte of the tblock
+                check_alignment(args, line, line_num, function_name, alignment_block, offset + inst_size, 0)
         # todo check for interesting instructions
     return (state, function_name)
 
