@@ -178,14 +178,18 @@ def process_line(args, line, line_num, state, function_name):
         function_name = ""
     elif state == STATE_FOUND_FUNCTION and is_instruction(line):
         offset = get_line_offset(line)
-        alignment_block = args.spectre_tblock_size
         if args.spectre_tblock_enable:
+            alignment_block = args.spectre_tblock_size
             check_within_tblock(args, line, line_num, function_name, offset)
             if is_call_instruction(line):
                 inst_size = get_instruction_size(line)
                 # instruction needs to end on the last byte of the tblock
                 check_alignment(args, line, line_num, function_name, alignment_block, offset + inst_size, 0)
-        # todo check for interesting instructions
+        if args.spectre_direct_branch_align_enable:
+            alignment_block = args.spectre_tblock_size * args.spectre_tblocks_in_ablock
+            if is_jump_instruction(line) and not is_indirect_jump_instruction(line):
+                check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_direct_branch_align)
+            # todo check for other interesting instructions
     return (state, function_name)
 
 def scan_file(args):
@@ -211,6 +215,8 @@ def main():
     parser.add_argument("--spectre-tblocks-in-ablock", type=int, default=4, help="Number of transaction blocks in alignment block. Alignment blocks help align instructions.")
     parser.add_argument("--spectre-function-align-enable", type=str2bool, default=True, help="Whether to align the each function.")
     parser.add_argument("--spectre-tblock-enable", type=str2bool, default=True, help="Whether to align the each function.")
+    parser.add_argument("--spectre-direct-branch-align-enable", type=str2bool, default=True, help="Whether to align direct branches.")
+    parser.add_argument("--spectre-direct-branch-align", type=int, default=23, help="What offset to align the direct branch instructions. direct_branch_inst_Offset mod tblock_size == this_value.")
     args = parser.parse_args()
     args.func_match_pat = re.compile(args.function_filter.replace('*', '.*'))
 
