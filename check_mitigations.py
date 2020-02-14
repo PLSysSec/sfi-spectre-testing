@@ -145,6 +145,7 @@ def check_alignment(args, line, line_num, function_name, alignment_block, offset
     out_str = args.input_file + ":" + str(line_num) + \
         " Func: " + function_name + \
         " Aligned: " + str(curr_align) + "/" + str(alignment_block) + \
+        " Expected Align: " + str(expected_align) + \
         " || " + line
     if curr_align != expected_align:
         print_error(out_str, args.limit)
@@ -185,9 +186,12 @@ def process_line(args, line, line_num, state, function_name):
                 inst_size = get_instruction_size(line)
                 # instruction needs to end on the last byte of the tblock
                 check_alignment(args, line, line_num, function_name, alignment_block, offset + inst_size, 0)
+
+        alignment_block = args.spectre_tblock_size * args.spectre_tblocks_in_ablock
         if args.spectre_direct_branch_align_enable:
-            alignment_block = args.spectre_tblock_size * args.spectre_tblocks_in_ablock
-            if is_jump_instruction(line) and not is_indirect_jump_instruction(line):
+            if is_indirect_jump_instruction(line):
+                check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_indirect_branch_align)
+            elif is_jump_instruction(line):
                 check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_direct_branch_align)
             # todo check for other interesting instructions
     return (state, function_name)
@@ -217,6 +221,9 @@ def main():
     parser.add_argument("--spectre-tblock-enable", type=str2bool, default=True, help="Whether to align the each function.")
     parser.add_argument("--spectre-direct-branch-align-enable", type=str2bool, default=True, help="Whether to align direct branches.")
     parser.add_argument("--spectre-direct-branch-align", type=int, default=23, help="What offset to align the direct branch instructions. direct_branch_inst_Offset mod tblock_size == this_value.")
+    parser.add_argument("--spectre-indirect-branch-align-enable", type=str2bool, default=True, help="Whether to align the indirect branch instructions.")
+    parser.add_argument("--spectre-indirect-branch-align", type=int, default=19, help="What offset to align the indirect branch instructions. indirect_branch_inst_Offset mod tblock_size == this_value.")
+
     args = parser.parse_args()
     args.func_match_pat = re.compile(args.function_filter.replace('*', '.*'))
 

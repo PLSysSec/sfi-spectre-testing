@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/check_mitigations.py",
             "args": [
                 "--function_filter",
-                "guest_func_printBranch",
+                "guest_func_spec_*",
                 "./out/test_spectre_so.asm"
             ],
             "console": "integratedTerminal"
