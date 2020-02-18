@@ -140,28 +140,36 @@ def print_error(out_str, limit):
 
 ################### Program ###################
 
-def check_alignment(args, line, line_num, function_name, alignment_block, offset, expected_align):
-    curr_align = offset % alignment_block
+def log_on(args, line, line_num, function_name, msg):
     out_str = args.input_file + ":" + str(line_num) + \
         " Func: " + function_name + \
-        " Aligned: " + str(curr_align) + "/" + str(alignment_block) + \
-        " Expected Align: " + str(expected_align) + \
+        " " + msg + \
         " || " + line
+    print_ok(out_str, args.loginfo)
+
+def error_on(args, line, line_num, function_name, msg):
+    out_str = args.input_file + ":" + str(line_num) + \
+        " Func: " + function_name + \
+        msg + \
+        " || " + line
+    print_error(out_str, args.limit)
+
+def check_alignment(args, line, line_num, function_name, alignment_block, offset, expected_align):
+    curr_align = offset % alignment_block
+    out_str = "Aligned: " + str(curr_align) + "/" + str(alignment_block) + \
+        " Expected Align: " + str(expected_align)
     if curr_align != expected_align:
-        print_error(out_str, args.limit)
+        error_on(args, line, line_num, function_name, out_str)
     else:
-        print_ok(out_str, args.loginfo)
+        log_on(args, line, line_num, function_name, out_str)
 
 def check_within_tblock(args, line, line_num, function_name, offset):
     inst_size = get_instruction_size(line)
     tblock_size = args.spectre_tblock_size
     space_left_in_tblock = tblock_size - (offset % tblock_size)
     if space_left_in_tblock < inst_size:
-        out_str = args.input_file + ":" + str(line_num) + \
-        " Func: " + function_name + \
-        " Instrucion not within transaction block"
-        print_error(out_str, args.limit)
-
+        out_str = "Instruction not within transaction block"
+        error_on(args, line, line_num, function_name, out_str)
 
 STATE_SCANNING = 0
 STATE_FOUND_FUNCTION = 1
@@ -182,6 +190,10 @@ def process_line(args, line, line_num, state, function_name):
         if args.spectre_tblock_enable:
             alignment_block = args.spectre_tblock_size
             check_within_tblock(args, line, line_num, function_name, offset)
+
+            if args.spectre_indirect_call_via_jump and is_indirect_call_instruction(line):
+                error_on(args, line, line_num, function_name, "Call Indirect function not allowed")
+
             if is_call_instruction(line):
                 inst_size = get_instruction_size(line)
                 # instruction needs to end on the last byte of the tblock
@@ -223,6 +235,7 @@ def main():
     parser.add_argument("--spectre-direct-branch-align", type=int, default=23, help="What offset to align the direct branch instructions. direct_branch_inst_Offset mod tblock_size == this_value.")
     parser.add_argument("--spectre-indirect-branch-align-enable", type=str2bool, default=True, help="Whether to align the indirect branch instructions.")
     parser.add_argument("--spectre-indirect-branch-align", type=int, default=19, help="What offset to align the indirect branch instructions. indirect_branch_inst_Offset mod tblock_size == this_value.")
+    parser.add_argument("--spectre-indirect-call-via-jump", type=str2bool, default=True, help="Whether to replace all indirect calls with jump instructions.")
 
     args = parser.parse_args()
     args.func_match_pat = re.compile(args.function_filter.replace('*', '.*'))

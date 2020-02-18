@@ -2,6 +2,7 @@
 
 extern "C"
 {
+    __attribute__((noinline))
     int spec_singleBranch(int val)
     {
         if (val) {
@@ -11,6 +12,7 @@ extern "C"
         }
     }
 
+    __attribute__((noinline))
     void spec_printBranch(int val)
     {
         if (val) {
@@ -24,6 +26,7 @@ extern "C"
         }
     }
 
+    __attribute__((noinline))
     int spec_switch(int val) {
         switch (val)
         {
@@ -41,12 +44,41 @@ extern "C"
 
         return 0;
     }
+
+    __attribute__((noinline))
+    int spec_call_ptr(int(*fn)())
+    {
+        int ret = 1 + fn();
+        spec_printBranch(ret);
+        return ret;
+    }
+
+    __attribute__((noinline))
+    int spec_get_val1() {
+        return 7;
+    }
+
+    __attribute__((noinline))
+    int spec_get_val2() {
+        return 9;
+    }
 }
 
 int main(int argc, char** argv)
 {
     int val = spec_singleBranch(argc);
     if (val != 5) {
+        return -1;
+    }
+
+    int (*fn)() = 0;
+    if (argc) {
+        fn = spec_get_val1;
+    } else {
+        fn = spec_get_val2;
+    }
+    int val2 = spec_call_ptr(fn);
+    if (val != 8) {
         return -1;
     }
 }
