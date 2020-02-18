@@ -6,7 +6,15 @@ LUCET_SRC=$(shell realpath ../lucet-spectre/)
 LUCET=$(LUCET_SRC)/target/debug/lucetc
 
 define generate_lucet_obj_files =
-	$(LUCET) \
+	RUST_BACKTRACE=1 $(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--emit clif \
+		out/$(1).wasm -o out/$(1).clif
+
+	RUST_BACKTRACE=1 $(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
@@ -15,7 +23,7 @@ define generate_lucet_obj_files =
 		out/$(1).wasm -o out/$(1).o && \
 	objdump -d out/$(1).o > out/$(1).asm
 
-	$(LUCET) \
+	RUST_BACKTRACE=1 $(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
@@ -23,7 +31,7 @@ define generate_lucet_obj_files =
 		out/$(1).wasm -o out/$(1).so && \
 	objdump -d out/$(1).so > out/$(1)_so.asm
 
-	$(LUCET) \
+	RUST_BACKTRACE=1 $(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
@@ -33,7 +41,7 @@ define generate_lucet_obj_files =
 		out/$(1).wasm -o out/$(1)_spectre.o && \
 	objdump -d out/$(1)_spectre.o > out/$(1)_spectre.asm
 
-	$(LUCET) \
+	RUST_BACKTRACE=1 $(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
