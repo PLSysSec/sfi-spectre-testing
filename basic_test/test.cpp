@@ -1,5 +1,11 @@
 #include <stdio.h>
 
+typedef struct {
+    int field1;
+    int field2;
+    int* field3;
+} St;
+
 extern "C"
 {
     __attribute__((noinline))
@@ -62,6 +68,27 @@ extern "C"
     int spec_get_val2() {
         return 9;
     }
+
+    __attribute__((noinline))
+    int spec_get_structp_field(St* ptr) {
+        return ptr->field2;
+    }
+
+    __attribute__((noinline))
+    int spec_get_structpp_field(St** ptr) {
+        return (*ptr)->field2;
+    }
+
+    __attribute__((noinline))
+    int spec_get_structpc_field(St* ptr, int c) {
+        return (ptr + c)->field2;
+    }
+
+    __attribute__((noinline))
+    int spec_get_structp_field_arr(St* ptr, int c) {
+        return ptr->field3[c];
+    }
+
 }
 
 int main(int argc, char** argv)
