@@ -95,6 +95,7 @@ int main(int argc, char** argv)
 {
     int val = spec_singleBranch(argc);
     if (val != 5) {
+        printf("Test1 failed\n");
         return -1;
     }
 
@@ -105,7 +106,8 @@ int main(int argc, char** argv)
         fn = spec_get_val2;
     }
     int val2 = spec_call_ptr(fn);
-    if (val != 8) {
+    if (val2 != 8) {
+        printf("Test2 failed\n");
         return -1;
     }
 }
