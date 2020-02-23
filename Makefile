@@ -11,7 +11,7 @@ WASM_RANLIB=/opt/wasi-sdk/bin/ranlib
 WASM_CFLAGS=--sysroot /opt/wasi-sdk/share/wasi-sysroot/ -O3
 WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
-RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir $(REPO_ROOT):$(REPO_ROOT)
+RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 export RUST_BACKTRACE=1
 
 define generate_lucet_obj_files =
@@ -106,7 +106,7 @@ $(REPO_ROOT)/out/libpng_original/libpng16.a: $(REPO_ROOT)/out/libpng_original/Ma
 
 ###########################################################################
 
-build: $(REPO_ROOT)/out/test.so $(REPO_ROOT)/out/libpng_original/libpng16.a $(REPO_ROOT)/out/libpng/libpng.a
+build: $(REPO_ROOT)/out/test.so $(REPO_ROOT)/out/libpng_original/libpng16.a $(REPO_ROOT)/out/libpng/libpng16.a
 
 test: build
 	@echo "-------------------"
@@ -116,15 +116,19 @@ test: build
 	@echo "-------------------"
 	$(RUN_WASM_SO) $(REPO_ROOT)/out/test.so
 	$(RUN_WASM_SO) $(REPO_ROOT)/out/test_spectre.so
-	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_spec_*" $(REPO_ROOT)/out/test_spectre.asm
-	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_spec_*" $(REPO_ROOT)/out/test_spectre_so.asm
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/test_spectre.asm
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/test_spectre_so.asm
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
 	cd libpng && $(REPO_ROOT)/out/libpng_original/pngtest
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest.so
-	@echo "OK."
+	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/libpng/pngtest_spectre.asm
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/libpng/pngtest_spectre_so.asm
+	@echo "-------------------"
+	@echo "Tests completed successfully!"
 
 clean:
 	rm -rf $(REPO_ROOT)/out

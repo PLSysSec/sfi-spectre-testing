@@ -109,7 +109,9 @@ def get_line_offset(line):
     return int(hex_str, 0)
 
 # assigned later
-def matches_function(func_name, func_match_pat):
+def matches_function(func_name, func_match_pat, func_match_pat_exclude):
+    if func_match_pat_exclude and func_match_pat_exclude.fullmatch(func_name):
+        return None
     match = func_match_pat.fullmatch(func_name)
     return match
 
@@ -150,7 +152,7 @@ def log_on(args, line, line_num, function_name, msg):
 def error_on(args, line, line_num, function_name, msg):
     out_str = args.input_file + ":" + str(line_num) + \
         " Func: " + function_name + \
-        msg + \
+        " " + msg + \
         " || " + line
     print_error(out_str, args.limit)
 
@@ -175,7 +177,7 @@ STATE_SCANNING = 0
 STATE_FOUND_FUNCTION = 1
 
 def process_line(args, line, line_num, state, function_name):
-    if state == STATE_SCANNING and is_function(line) and matches_function(get_func_name(line), args.func_match_pat):
+    if state == STATE_SCANNING and is_function(line) and matches_function(get_func_name(line), args.func_match_pat, args.func_match_pat_exclude):
         state = STATE_FOUND_FUNCTION
         function_name = get_func_name(line)
         if args.spectre_function_align_enable:
@@ -225,6 +227,7 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=True)
     parser.add_argument("input_file", type=str, help="Asm file to check")
     parser.add_argument("--function_filter", type=str, default="*", help="Function name to check")
+    parser.add_argument("--function_exclude_filter", type=str, default="", help="Functions to exclude")
     parser.add_argument("--limit", type=int, default=-1, help="Stop at `limit` errors")
     parser.add_argument("--loginfo", type=str2bool, default=False, help="Print log level information")
     parser.add_argument("--spectre-tblock-size", type=int, default=32, help="Value used as the bundle size for instructions---similar to native client.")
@@ -239,6 +242,9 @@ def main():
 
     args = parser.parse_args()
     args.func_match_pat = re.compile(args.function_filter.replace('*', '.*'))
+    args.func_match_pat_exclude = None
+    if args.function_exclude_filter:
+        args.func_match_pat_exclude = re.compile(args.function_exclude_filter.replace('*', '.*'))
 
     scan_file(args)
 
