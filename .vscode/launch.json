@@ -11,8 +11,14 @@
             "program": "${workspaceFolder}/check_mitigations.py",
             "args": [
                 "--function_filter",
-                "guest_func_spec_*",
-                "./out/test_spectre_so.asm"
+                "guest_func_*",
+                "--function_exclude_filter",
+                "guest_func__start",
+                "--ignore-switch-table-data",
+                "False",
+                "--limit",
+                "10",
+                "/tmp/test.asm"
             ],
             "console": "integratedTerminal"
         }

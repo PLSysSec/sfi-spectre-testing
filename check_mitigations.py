@@ -121,8 +121,64 @@ def is_ret_instruction(line):
     match = ret_pattern.fullmatch(line)
     return match
 
+#  327:	c9                   	leaveq
+leave_pattern = re.compile(".*?\t.*?\tleave.*\n?")
+def is_leave_instruction(line):
+    match = leave_pattern.fullmatch(line)
+    return match
+
+# b97:	0f 0b                	ud2
+ud2_pattern = re.compile(".*?\t.*?\tud2.*\n?")
+def is_ud2_instruction(line):
+    match = ud2_pattern.fullmatch(line)
+    return match
+
 def is_retpoline(function_name):
     return function_name.find("retpoline") >= 0
+
+function_switch_table_mapping = {}
+def add_switch_table_mapping(args, function_name, start_line, end_line, last_valid_inst_line):
+    function_switch_table_mapping[function_name] = {
+        "start_line": start_line,
+        "end_line": end_line,
+        "last_valid_inst_line": last_valid_inst_line
+    }
+    print_ok("End of function: " + function_name + " : " + str(last_valid_inst_line), args.loginfo)
+
+def init_switch_table_mapping(args):
+    function_name = ""
+    start_line = 0
+    last_valid_inst_line = 0
+    with open(args.input_file, "r") as f:
+        line_num = 0
+        for line in f:
+            line_num = line_num + 1
+            if line.strip() == "...":
+                continue
+            if is_function(line) and matches_function(get_func_name(line), args.func_match_pat, args.func_match_pat_exclude):
+                function_name = get_func_name(line)
+                start_line = line_num
+                last_valid_inst_line = 0
+            if function_name != "" and is_end_of_function(line):
+                end_line = line_num
+                if last_valid_inst_line == 0:
+                    last_valid_inst_line = end_line
+                add_switch_table_mapping(args, function_name, start_line, end_line, last_valid_inst_line)
+                function_name = ""
+            # heuristic if we see a terminator instruction in the function, this is probably not switch table data
+            if is_ret_instruction(line) or is_leave_instruction(line) or is_ud2_instruction(line):
+                last_valid_inst_line = line_num
+
+    if function_name:
+        end_line = line_num
+        if last_valid_inst_line == 0:
+            last_valid_inst_line = end_line
+        add_switch_table_mapping(args, function_name, start_line, end_line, last_valid_inst_line)
+        function_name = ""
+
+def is_switch_table_instruction(args, target_line_num, function_name):
+    last_valid_inst_line = function_switch_table_mapping[function_name]["last_valid_inst_line"]
+    return target_line_num <=last_valid_inst_line
 
 ################### Logging ###################
 
@@ -175,6 +231,7 @@ def check_within_tblock(args, line, line_num, function_name, offset):
 
 STATE_SCANNING = 0
 STATE_FOUND_FUNCTION = 1
+STATE_SWITCH_TABLE_DATA = 2
 
 def process_line(args, line, line_num, state, function_name):
     if state == STATE_SCANNING and is_function(line) and matches_function(get_func_name(line), args.func_match_pat, args.func_match_pat_exclude):
@@ -184,9 +241,11 @@ def process_line(args, line, line_num, state, function_name):
             alignment_block = args.spectre_tblock_size * args.spectre_tblocks_in_ablock
             offset = get_func_offset(line)
             check_alignment(args, line, line_num, function_name, alignment_block, offset, 0)
-    elif state == STATE_FOUND_FUNCTION and is_end_of_function(line):
+    elif (state == STATE_FOUND_FUNCTION or state == STATE_SWITCH_TABLE_DATA) and is_end_of_function(line):
         state = STATE_SCANNING
         function_name = ""
+    elif state == STATE_FOUND_FUNCTION and is_instruction(line) and args.ignore_switch_table_data and is_switch_table_instruction(args, line_num, function_name):
+        state = STATE_SWITCH_TABLE_DATA
     elif state == STATE_FOUND_FUNCTION and is_instruction(line):
         offset = get_line_offset(line)
         if args.spectre_tblock_enable:
@@ -211,6 +270,9 @@ def process_line(args, line, line_num, state, function_name):
     return (state, function_name)
 
 def scan_file(args):
+    if args.ignore_switch_table_data:
+        init_switch_table_mapping(args)
+
     state = STATE_SCANNING
     function_name = ""
 
@@ -230,6 +292,7 @@ def main():
     parser.add_argument("--function_exclude_filter", type=str, default="", help="Functions to exclude")
     parser.add_argument("--limit", type=int, default=-1, help="Stop at `limit` errors")
     parser.add_argument("--loginfo", type=str2bool, default=False, help="Print log level information")
+    parser.add_argument("--ignore-switch-table-data", type=str2bool, default=False, help="Do not throw errors when finding switch table data that is stored in the code section with exec permissions")
     parser.add_argument("--spectre-tblock-size", type=int, default=32, help="Value used as the bundle size for instructions---similar to native client.")
     parser.add_argument("--spectre-tblocks-in-ablock", type=int, default=4, help="Number of transaction blocks in alignment block. Alignment blocks help align instructions.")
     parser.add_argument("--spectre-function-align-enable", type=str2bool, default=True, help="Whether to align the each function.")

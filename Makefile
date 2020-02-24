@@ -116,8 +116,8 @@ test: build
 	@echo "-------------------"
 	$(RUN_WASM_SO) $(REPO_ROOT)/out/test.so
 	$(RUN_WASM_SO) $(REPO_ROOT)/out/test_spectre.so
-	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/test_spectre.asm
-	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/test_spectre_so.asm
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(REPO_ROOT)/out/test_spectre.asm
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(REPO_ROOT)/out/test_spectre_so.asm
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
@@ -125,8 +125,8 @@ test: build
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/libpng/pngtest_spectre.asm
-	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --function_exclude_filter "guest_func__start" --limit 10 $(REPO_ROOT)/out/libpng/pngtest_spectre_so.asm
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(REPO_ROOT)/out/libpng/pngtest_spectre.asm
+	$(REPO_ROOT)/check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(REPO_ROOT)/out/libpng/pngtest_spectre_so.asm
 	@echo "-------------------"
 	@echo "Tests completed successfully!"
 
