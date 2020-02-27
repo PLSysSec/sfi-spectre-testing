@@ -33,6 +33,14 @@ extern "C"
     }
 
     __attribute__((noinline))
+    void spec_printBranch2(int val)
+    {
+        for(int i = 0; i < val; i++){
+            printf("Val: %d\n", val);
+        }
+    }
+
+    __attribute__((noinline))
     int spec_switch(int val) {
         switch (val)
         {

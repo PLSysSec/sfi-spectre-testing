@@ -17,6 +17,7 @@ export RUST_BACKTRACE=1
 define generate_lucet_obj_files =
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -25,6 +26,7 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -34,6 +36,7 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -42,6 +45,7 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -52,6 +56,7 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
