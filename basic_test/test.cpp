@@ -97,6 +97,15 @@ extern "C"
         return ptr->field3[c];
     }
 
+    __attribute__((noinline))
+    unsigned int spec_shr(unsigned int v) {
+        return v >> 3;
+    }
+
+    __attribute__((noinline))
+    unsigned int spec_shl(unsigned int v) {
+        return v << 3;
+    }
 }
 
 int main(int argc, char** argv)

@@ -113,7 +113,7 @@ $(REPO_ROOT)/out/libpng_original/libpng16.a: $(REPO_ROOT)/out/libpng_original/Ma
 
 build: $(REPO_ROOT)/out/test.so $(REPO_ROOT)/out/libpng_original/libpng16.a $(REPO_ROOT)/out/libpng/libpng16.a
 
-test: build
+test:
 	@echo "-------------------"
 	@echo "Testing"
 	@echo "-------------------"

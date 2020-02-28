@@ -10,15 +10,15 @@
             "request": "launch",
             "program": "${workspaceFolder}/check_mitigations.py",
             "args": [
-                "--function_filter",
-                "guest_func_*",
-                "--function_exclude_filter",
-                "guest_func__start",
+                "--loginfo",
+                "True",
                 "--ignore-switch-table-data",
-                "False",
+                "True",
+                "--function_filter",
+                "guest_func_spec_switch",
                 "--limit",
                 "10",
-                "/tmp/test.asm"
+                "${workspaceFolder}/out/test_spectre_so.asm"
             ],
             "console": "integratedTerminal"
         }

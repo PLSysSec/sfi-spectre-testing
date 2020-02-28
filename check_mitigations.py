@@ -178,7 +178,7 @@ def init_switch_table_mapping(args):
 
 def is_switch_table_instruction(args, target_line_num, function_name):
     last_valid_inst_line = function_switch_table_mapping[function_name]["last_valid_inst_line"]
-    return target_line_num <=last_valid_inst_line
+    return target_line_num > last_valid_inst_line
 
 ################### Logging ###################
 
@@ -261,12 +261,11 @@ def process_line(args, line, line_num, state, function_name):
                 check_alignment(args, line, line_num, function_name, alignment_block, offset + inst_size, 0)
 
         alignment_block = args.spectre_tblock_size * args.spectre_tblocks_in_ablock
-        if args.spectre_direct_branch_align_enable:
-            if is_indirect_jump_instruction(line):
-                check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_indirect_branch_align)
-            elif is_jump_instruction(line):
-                check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_direct_branch_align)
-            # todo check for other interesting instructions
+        if args.spectre_indirect_branch_align_enable and is_indirect_jump_instruction(line):
+            check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_indirect_branch_align)
+        if args.spectre_direct_branch_align_enable and is_jump_instruction(line) and not is_indirect_jump_instruction(line):
+            check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_direct_branch_align)
+        # todo check for other interesting instructions
     return (state, function_name)
 
 def scan_file(args):
@@ -313,7 +312,6 @@ def main():
     scan_file(args)
 
     if error_count != 0:
-        print("Note some spurious errors exist as lucet appends data to the end of functions. Thus if you see a disallowed instruction after the last ret of a function, please ignore this\n")
         print("Error Count: " + str(error_count))
         sys.exit(1)
 
