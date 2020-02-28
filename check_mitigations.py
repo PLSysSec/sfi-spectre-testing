@@ -301,7 +301,8 @@ def main():
     parser.add_argument("--spectre-direct-branch-align", type=int, default=23, help="What offset to align the direct branch instructions. direct_branch_inst_Offset mod tblock_size == this_value.")
     parser.add_argument("--spectre-indirect-branch-align-enable", type=str2bool, default=True, help="Whether to align the indirect branch instructions.")
     parser.add_argument("--spectre-indirect-branch-align", type=int, default=19, help="What offset to align the indirect branch instructions. indirect_branch_inst_Offset mod tblock_size == this_value.")
-    parser.add_argument("--spectre-indirect-call-via-jump", type=str2bool, default=True, help="Whether to replace all indirect calls with jump instructions.")
+    # Disable by default as it is not necessary
+    parser.add_argument("--spectre-indirect-call-via-jump", type=str2bool, default=False, help="Whether to replace all indirect calls with jump instructions.")
 
     args = parser.parse_args()
     args.func_match_pat = re.compile(args.function_filter.replace('*', '.*'))
