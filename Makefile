@@ -50,6 +50,27 @@ define generate_lucet_obj_files =
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--emit obj \
+		--spectre-baseline-loadfence-enable \
+		out/$(1).wasm -o out/$(1)_spectre_baseline.o && \
+	objdump -d out/$(1)_spectre_baseline.o > out/$(1)_spectre_baseline.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--pinned-heap-reg \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--spectre-baseline-loadfence-enable \
+		out/$(1).wasm -o out/$(1)_spectre_baseline.so && \
+	objdump -d out/$(1)_spectre_baseline.so > out/$(1)_spectre_baseline_so.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--pinned-heap-reg \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--emit obj \
 		--spectre-mitigations-enable \
 		out/$(1).wasm -o out/$(1)_spectre.o && \
 	objdump -d out/$(1)_spectre.o > out/$(1)_spectre.asm
@@ -120,6 +141,7 @@ test:
 	@echo "Basic Test"
 	@echo "-------------------"
 	$(RUN_WASM_SO) out/test.so
+	$(RUN_WASM_SO) out/test_spectre_baseline.so
 	$(RUN_WASM_SO) out/test_spectre.so
 	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/test_spectre.asm
 	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/test_spectre_so.asm
