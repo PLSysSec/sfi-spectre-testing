@@ -133,6 +133,12 @@ def is_ud2_instruction(line):
     match = ud2_pattern.fullmatch(line)
     return match
 
+#2462a:	fe                   	(bad)  
+bad_pattern = re.compile(".*?\t.*?\t\(bad\).*\n?")
+def is_bad_instruction(line):
+    match = bad_pattern.fullmatch(line)
+    return match
+
 def is_retpoline(function_name):
     return function_name.find("retpoline") >= 0
 
@@ -149,6 +155,7 @@ def init_switch_table_mapping(args):
     function_name = ""
     start_line = 0
     last_valid_inst_line = 0
+    seen_bad = False
     with open(args.input_file, "r") as f:
         line_num = 0
         for line in f:
@@ -159,6 +166,7 @@ def init_switch_table_mapping(args):
                 function_name = get_func_name(line)
                 start_line = line_num
                 last_valid_inst_line = 0
+                seen_bad = False
             if function_name != "" and is_end_of_function(line):
                 end_line = line_num
                 if last_valid_inst_line == 0:
@@ -166,7 +174,9 @@ def init_switch_table_mapping(args):
                 add_switch_table_mapping(args, function_name, start_line, end_line, last_valid_inst_line)
                 function_name = ""
             # heuristic if we see a terminator instruction in the function, this is probably not switch table data
-            if is_ret_instruction(line) or is_leave_instruction(line) or is_ud2_instruction(line):
+            if is_bad_instruction(line):
+                seen_bad = True
+            if not seen_bad and (is_ret_instruction(line) or is_leave_instruction(line) or is_ud2_instruction(line)):
                 last_valid_inst_line = line_num
 
     if function_name:
