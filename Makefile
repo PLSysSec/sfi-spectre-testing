@@ -88,12 +88,12 @@ endef
 
 ###########################################################################
 
-out/test.wasm: basic_test/test.cpp
-	mkdir -p out && \
+out/basic_test/test.wasm: basic_test/test.cpp
+	mkdir -p out/basic_test && \
 	$(WASM_CLANG)++ $(WASM_CFLAGS) $(WASM_LDFLAGS) $< -o $@
 
-out/test.so: out/test.wasm $(LUCET)
-	$(call generate_lucet_obj_files,test)
+out/basic_test/test.so: out/basic_test/test.wasm $(LUCET)
+	$(call generate_lucet_obj_files,basic_test/test)
 
 ###########################################################################
 
@@ -132,7 +132,7 @@ out/libpng_original/libpng16.a: out/libpng_original/Makefile
 
 ###########################################################################
 
-build: out/test.so out/libpng_original/libpng16.a out/libpng/libpng16.a
+build: out/basic_test/test.so out/libpng_original/libpng16.a out/libpng/libpng16.a
 
 test:
 	@echo "-------------------"
@@ -140,17 +140,21 @@ test:
 	@echo "-------------------"
 	@echo "Basic Test"
 	@echo "-------------------"
-	$(RUN_WASM_SO) out/test.so
-	$(RUN_WASM_SO) out/test_spectre_baseline.so
-	$(RUN_WASM_SO) out/test_spectre.so
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/test_spectre.asm
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/test_spectre_so.asm
+	$(RUN_WASM_SO) out/basic_test/test.so
+	$(RUN_WASM_SO) out/basic_test/test_spectre_baseline.so
+	$(RUN_WASM_SO) out/basic_test/test_spectre.so
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/basic_test/test_spectre.asm
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/basic_test/test_spectre_so.asm
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
 	cd libpng && $(REPO_ROOT)/out/libpng_original/pngtest
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest_spectre_baseline.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest_spectre.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/libpng/pngtest_spectre.asm
 	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/libpng/pngtest_spectre_so.asm
