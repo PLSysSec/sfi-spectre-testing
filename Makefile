@@ -3,6 +3,7 @@
 .DEFAULT_GOAL := build
 
 REPO_ROOT=$(shell realpath .)
+OUT_DIR=$(shell realpath ../out/sfi-spectre-test/)
 LUCET_SRC=$(shell realpath ../lucet-spectre/)
 LUCET=$(LUCET_SRC)/target/debug/lucetc
 WASM_CLANG=/opt/wasi-sdk/bin/clang
@@ -22,7 +23,7 @@ define generate_lucet_obj_files =
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--emit clif \
-		out/$(1).wasm -o out/$(1).clif
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).clif
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -31,8 +32,8 @@ define generate_lucet_obj_files =
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--emit obj \
-		out/$(1).wasm -o out/$(1).o && \
-	objdump -d out/$(1).o > out/$(1).asm
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).o && \
+	objdump -d $(OUT_DIR)/$(1).o > $(OUT_DIR)/$(1).asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -40,8 +41,8 @@ define generate_lucet_obj_files =
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		out/$(1).wasm -o out/$(1).so && \
-	objdump -d out/$(1).so > out/$(1)_so.asm
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).so && \
+	objdump -d $(OUT_DIR)/$(1).so > $(OUT_DIR)/$(1)_so.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -51,8 +52,8 @@ define generate_lucet_obj_files =
 		--max-reserved-size "4GiB" \
 		--emit obj \
 		--spectre-baseline-loadfence-enable \
-		out/$(1).wasm -o out/$(1)_spectre_baseline.o && \
-	objdump -d out/$(1)_spectre_baseline.o > out/$(1)_spectre_baseline.asm
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_baseline.o && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_baseline.o > $(OUT_DIR)/$(1)_spectre_baseline.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -61,8 +62,8 @@ define generate_lucet_obj_files =
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-baseline-loadfence-enable \
-		out/$(1).wasm -o out/$(1)_spectre_baseline.so && \
-	objdump -d out/$(1)_spectre_baseline.so > out/$(1)_spectre_baseline_so.asm
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_baseline.so && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_baseline.so > $(OUT_DIR)/$(1)_spectre_baseline_so.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -72,8 +73,8 @@ define generate_lucet_obj_files =
 		--max-reserved-size "4GiB" \
 		--emit obj \
 		--spectre-mitigations-enable \
-		out/$(1).wasm -o out/$(1)_spectre.o && \
-	objdump -d out/$(1)_spectre.o > out/$(1)_spectre.asm
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre.o && \
+	objdump -d $(OUT_DIR)/$(1)_spectre.o > $(OUT_DIR)/$(1)_spectre.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -82,57 +83,60 @@ define generate_lucet_obj_files =
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-mitigations-enable \
-		out/$(1).wasm -o out/$(1)_spectre.so && \
-	objdump -d out/$(1)_spectre.so > out/$(1)_spectre_so.asm
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre.so && \
+	objdump -d $(OUT_DIR)/$(1)_spectre.so > $(OUT_DIR)/$(1)_spectre_so.asm
 endef
 
 ###########################################################################
 
-out/basic_test/test.wasm: basic_test/test.cpp
-	mkdir -p out/basic_test && \
+$(OUT_DIR)/basic_test/test.wasm: basic_test/test.cpp
+	mkdir -p $(OUT_DIR)/basic_test && \
 	$(WASM_CLANG)++ $(WASM_CFLAGS) $(WASM_LDFLAGS) $< -o $@
 
-out/basic_test/test.so: out/basic_test/test.wasm $(LUCET)
+$(OUT_DIR)/basic_test/test.so: $(OUT_DIR)/basic_test/test.wasm $(LUCET)
 	$(call generate_lucet_obj_files,basic_test/test)
 
 ###########################################################################
 
-out/zlib/Makefile: zlib/configure
-	mkdir -p out/zlib
-	cd out/zlib && CC=$(WASM_CLANG) AR=$(WASM_AR) RANLIB=$(WASM_RANLIB) CFLAGS='$(WASM_CFLAGS)' LDFLAGS='$(WASM_LDFLAGS)' $(REPO_ROOT)/zlib/configure
+$(OUT_DIR)/zlib/Makefile: zlib/configure
+	mkdir -p $(OUT_DIR)/zlib
+	cd $(OUT_DIR)/zlib && CC=$(WASM_CLANG) AR=$(WASM_AR) RANLIB=$(WASM_RANLIB) CFLAGS='$(WASM_CFLAGS)' LDFLAGS='$(WASM_LDFLAGS)' $(REPO_ROOT)/zlib/configure
 
-out/zlib/libz.a: out/zlib/Makefile
-	$(MAKE) -C out/zlib
+$(OUT_DIR)/zlib/libz.a: $(OUT_DIR)/zlib/Makefile
+	$(MAKE) -C $(OUT_DIR)/zlib
 
-out/libpng/Makefile: out/zlib/libz.a libpng/CMakeLists.txt
-	mkdir -p out/libpng
-	cd out/libpng && cmake -DCMAKE_C_COMPILER=$(WASM_CLANG) -DCMAKE_C_FLAGS='$(WASM_CFLAGS) -DPNG_NO_SETJMP=1' -DCMAKE_EXE_LINKER_FLAGS='$(WASM_LDFLAGS)' -DM_LIBRARY=$(WASM_LIBM) -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(REPO_ROOT)/out/zlib/libz.a -DPNG_SHARED=0 $(REPO_ROOT)/libpng
+$(OUT_DIR)/libpng/Makefile: $(OUT_DIR)/zlib/libz.a libpng/CMakeLists.txt
+	mkdir -p $(OUT_DIR)/libpng
+	cd $(OUT_DIR)/libpng && cmake -DCMAKE_C_COMPILER=$(WASM_CLANG) -DCMAKE_C_FLAGS='$(WASM_CFLAGS) -DPNG_NO_SETJMP=1' -DCMAKE_EXE_LINKER_FLAGS='$(WASM_LDFLAGS)' -DM_LIBRARY=$(WASM_LIBM) -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib/libz.a -DPNG_SHARED=0 $(REPO_ROOT)/libpng
 
-out/libpng/libpng16.a: out/libpng/Makefile $(LUCET)
-	$(MAKE) -C out/libpng
+$(OUT_DIR)/libpng/libpng16.a: $(OUT_DIR)/libpng/Makefile $(LUCET)
+	$(MAKE) -C $(OUT_DIR)/libpng
 	# Have to build pngtest manually
-	$(WASM_CLANG) $(WASM_CFLAGS) $(WASM_LDFLAGS) libpng/pngtest.c -I out/libpng/ -I zlib/ -o out/libpng/pngtest.wasm -L out/libpng -L out/zlib -lpng -lz
+	$(WASM_CLANG) $(WASM_CFLAGS) $(WASM_LDFLAGS) libpng/pngtest.c -I $(OUT_DIR)/libpng/ -I zlib/ -o $(OUT_DIR)/libpng/pngtest.wasm -L $(OUT_DIR)/libpng -L $(OUT_DIR)/zlib -lpng -lz
 	$(call generate_lucet_obj_files,libpng/pngtest)
 
 ###########################################################################
 
-out/zlib_original/Makefile: zlib/configure
-	mkdir -p out/zlib_original
-	cd out/zlib_original && CFLAGS='-O3' $(REPO_ROOT)/zlib/configure
+$(OUT_DIR)/zlib_original/Makefile: zlib/configure
+	mkdir -p $(OUT_DIR)/zlib_original
+	cd $(OUT_DIR)/zlib_original && CFLAGS='-O3' $(REPO_ROOT)/zlib/configure
 
-out/zlib_original/libz.a: out/zlib_original/Makefile
-	$(MAKE) -C out/zlib_original
+$(OUT_DIR)/zlib_original/libz.a: $(OUT_DIR)/zlib_original/Makefile
+	$(MAKE) -C $(OUT_DIR)/zlib_original
 
-out/libpng_original/Makefile: out/zlib_original/libz.a libpng/CMakeLists.txt
-	mkdir -p out/libpng_original
-	cd out/libpng_original && cmake -DCMAKE_C_FLAGS='-O3' -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(REPO_ROOT)/out/zlib_original/libz.a $(REPO_ROOT)/libpng
+$(OUT_DIR)/libpng_original/Makefile: $(OUT_DIR)/zlib_original/libz.a libpng/CMakeLists.txt
+	mkdir -p $(OUT_DIR)/libpng_original
+	cd $(OUT_DIR)/libpng_original && cmake -DCMAKE_C_FLAGS='-O3' -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib_original/libz.a $(REPO_ROOT)/libpng
 
-out/libpng_original/libpng16.a: out/libpng_original/Makefile
-	$(MAKE) -C out/libpng_original
+$(OUT_DIR)/libpng_original/libpng16.a: $(OUT_DIR)/libpng_original/Makefile
+	$(MAKE) -C $(OUT_DIR)/libpng_original
 
 ###########################################################################
 
-build: out/basic_test/test.so out/libpng_original/libpng16.a out/libpng/libpng16.a
+$(OUT_DIR):
+	mkdir -p $(OUT_DIR)
+
+build: $(OUT_DIR) $(OUT_DIR)/basic_test/test.so $(OUT_DIR)/libpng_original/libpng16.a $(OUT_DIR)/libpng/libpng16.a
 
 test:
 	@echo "-------------------"
@@ -140,24 +144,24 @@ test:
 	@echo "-------------------"
 	@echo "Basic Test"
 	@echo "-------------------"
-	$(RUN_WASM_SO) out/basic_test/test.so
-	$(RUN_WASM_SO) out/basic_test/test_spectre_baseline.so
-	$(RUN_WASM_SO) out/basic_test/test_spectre.so
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/basic_test/test_spectre.asm
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/basic_test/test_spectre_so.asm
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_baseline.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre.so
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre.asm
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre_so.asm
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
-	cd libpng && $(REPO_ROOT)/out/libpng_original/pngtest
+	cd libpng && $(OUT_DIR)/libpng_original/pngtest
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest_spectre_baseline.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_baseline.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(REPO_ROOT)/out/libpng/pngtest_spectre.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/libpng/pngtest_spectre.asm
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 out/libpng/pngtest_spectre_so.asm
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/libpng/pngtest_spectre.asm
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/libpng/pngtest_spectre_so.asm
 	@echo "-------------------"
 	@echo "Tests completed successfully!"
 
