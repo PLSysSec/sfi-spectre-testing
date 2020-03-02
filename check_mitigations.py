@@ -87,6 +87,9 @@ def is_indirect_jump_instruction(line):
     match = indirect_jump_pattern.fullmatch(line)
     return match
 
+def is_direct_jump_instruction(line):
+    is_jump_instruction(line) and not is_indirect_jump_instruction(line)
+
 # 7874:	ff d0                	callq  *%rax
 indirect_call_pattern = re.compile(".*?\t.*?\tcall[a-z]*\s+\*%r.*\n?")
 def is_indirect_call_instruction(line):
@@ -100,6 +103,8 @@ def is_call_instruction(line):
     match = call_pattern.fullmatch(line)
     return match
 
+def is_direct_call_instruction(line):
+    is_call_instruction(line) and not is_indirect_call_instruction(line)
 
 offset_pattern = re.compile("\s*([0-9a-fA-F]+):.*")
 
@@ -265,15 +270,15 @@ def process_line(args, line, line_num, state, function_name):
             if args.spectre_indirect_call_via_jump and is_indirect_call_instruction(line):
                 error_on(args, line, line_num, function_name, "Call Indirect function not allowed")
 
-            if is_call_instruction(line):
+            if is_call_instruction(line) and args.spectre_nacl_style_calls:
                 inst_size = get_instruction_size(line)
                 # instruction needs to end on the last byte of the tblock
                 check_alignment(args, line, line_num, function_name, alignment_block, offset + inst_size, 0)
 
         alignment_block = args.spectre_tblock_size * args.spectre_tblocks_in_ablock
-        if args.spectre_indirect_branch_align_enable and is_indirect_jump_instruction(line):
+        if args.spectre_indirect_branch_align_enable and (is_indirect_jump_instruction(line) or (not args.spectre_nacl_style_calls and is_indirect_call_instruction(line))):
             check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_indirect_branch_align)
-        if args.spectre_direct_branch_align_enable and is_jump_instruction(line) and not is_indirect_jump_instruction(line):
+        if args.spectre_direct_branch_align_enable and (is_direct_jump_instruction(line) or (not args.spectre_nacl_style_calls and is_direct_call_instruction(line))):
             check_alignment(args, line, line_num, function_name, alignment_block, offset, args.spectre_direct_branch_align)
         # todo check for other interesting instructions
     return (state, function_name)
@@ -309,9 +314,10 @@ def main():
     parser.add_argument("--spectre-direct-branch-align-enable", type=str2bool, default=True, help="Whether to align direct branches.")
     parser.add_argument("--spectre-direct-branch-align", type=int, default=23, help="What offset to align the direct branch instructions. direct_branch_inst_Offset mod tblock_size == this_value.")
     parser.add_argument("--spectre-indirect-branch-align-enable", type=str2bool, default=True, help="Whether to align the indirect branch instructions.")
-    parser.add_argument("--spectre-indirect-branch-align", type=int, default=19, help="What offset to align the indirect branch instructions. indirect_branch_inst_Offset mod tblock_size == this_value.")
-    # Disable by default as it is not necessary
+    parser.add_argument("--spectre-indirect-branch-align", type=int, default=29, help="What offset to align the indirect branch instructions. indirect_branch_inst_Offset mod tblock_size == this_value.")
+    # Disable next args by default as it only for benchmarking
     parser.add_argument("--spectre-indirect-call-via-jump", type=str2bool, default=False, help="Whether to replace all indirect calls with jump instructions.")
+    parser.add_argument("--spectre-nacl-style-calls", type=str2bool, default=False, help="Whether to use nacl style function calls at the bottome of a transaction block. This option is not secure for spectre mitigations. Not enabled by default --- for benchmarking only.")
 
     args = parser.parse_args()
     args.func_match_pat = re.compile(args.function_filter.replace('*', '.*'))

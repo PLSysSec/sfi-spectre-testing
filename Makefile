@@ -1,4 +1,4 @@
-.PHONY : build
+.PHONY : build run_tests check_asm test clean
 
 .DEFAULT_GOAL := build
 
@@ -18,7 +18,6 @@ export RUST_BACKTRACE=1
 define generate_lucet_obj_files =
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -27,7 +26,6 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -37,7 +35,6 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -46,7 +43,6 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -57,7 +53,6 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--pinned-heap-reg \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -68,6 +63,7 @@ define generate_lucet_obj_files =
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--pinned-heap-reg \
+		--pinned-control-flow \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -79,6 +75,7 @@ define generate_lucet_obj_files =
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--pinned-heap-reg \
+		--pinned-control-flow \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
@@ -138,7 +135,7 @@ $(OUT_DIR):
 
 build: $(OUT_DIR) $(OUT_DIR)/basic_test/test.so $(OUT_DIR)/libpng_original/libpng16.a $(OUT_DIR)/libpng/libpng16.a
 
-test:
+run_tests:
 	@echo "-------------------"
 	@echo "Testing"
 	@echo "-------------------"
@@ -147,8 +144,6 @@ test:
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_baseline.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre.so
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre.asm
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre_so.asm
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
@@ -160,9 +155,25 @@ test:
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
+	@echo "-------------------"
+
+check_asm:
+	@echo "-------------------"
+	@echo "Testing"
+	@echo "-------------------"
+	@echo "Basic Test"
+	@echo "-------------------"
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre.asm
+	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre_so.asm
+	@echo "-------------------"
+	@echo "PNG Test"
+	@echo "-------------------"
 	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/libpng/pngtest_spectre.asm
 	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/libpng/pngtest_spectre_so.asm
 	@echo "-------------------"
+
+
+test: check_asm run_tests
 	@echo "Tests completed successfully!"
 
 clean:
