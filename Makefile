@@ -62,24 +62,24 @@ define generate_lucet_obj_files =
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--pinned-heap-reg \
-		--pinned-control-flow \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		--emit obj \
 		--spectre-mitigations-enable \
+		--pinned-heap-reg \
+		--pinned-control-flow \
+		--emit obj \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre.o && \
 	objdump -d $(OUT_DIR)/$(1)_spectre.o > $(OUT_DIR)/$(1)_spectre.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--pinned-heap-reg \
-		--pinned-control-flow \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-mitigations-enable \
+		--pinned-heap-reg \
+		--pinned-control-flow \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre.so && \
 	objdump -d $(OUT_DIR)/$(1)_spectre.so > $(OUT_DIR)/$(1)_spectre_so.asm
 endef
