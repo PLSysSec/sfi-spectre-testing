@@ -24,14 +24,6 @@ define generate_lucet_obj_files =
 		--emit clif \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).clif
 
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--emit obj \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).o && \
-	objdump -d $(OUT_DIR)/$(1).o > $(OUT_DIR)/$(1).asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -40,16 +32,6 @@ define generate_lucet_obj_files =
 		--max-reserved-size "4GiB" \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).so && \
 	objdump -d $(OUT_DIR)/$(1).so > $(OUT_DIR)/$(1)_so.asm
-
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--emit obj \
-		--spectre-baseline-loadfence-enable \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_baseline.o && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_baseline.o > $(OUT_DIR)/$(1)_spectre_baseline.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
@@ -82,6 +64,18 @@ define generate_lucet_obj_files =
 		--pinned-control-flow \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre.so && \
 	objdump -d $(OUT_DIR)/$(1)_spectre.so > $(OUT_DIR)/$(1)_spectre_so.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--spectre-mitigations-enable \
+		--pinned-heap-reg \
+		--pinned-control-flow \
+		--spectre-tblock-protection cet \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet.so && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_cet.so > $(OUT_DIR)/$(1)_spectre_cet_so.asm
 endef
 
 ###########################################################################
@@ -144,6 +138,7 @@ run_tests:
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_baseline.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
@@ -154,6 +149,8 @@ run_tests:
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_baseline.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	@echo "-------------------"
 
