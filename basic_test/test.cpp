@@ -8,11 +8,14 @@ typedef struct {
 
 extern "C"
 {
+    const int spec_GL_int_val = 1;
+    const char spec_GL_char_val[] = "Testing 123";
+
     __attribute__((noinline))
     int spec_singleBranch(int val)
     {
         if (val) {
-            return 5;
+            return spec_GL_int_val;
         } else {
             return 7;
         }
@@ -26,6 +29,8 @@ extern "C"
         } else {
             printf("else side\n");
         }
+
+        printf("%s\n", spec_GL_char_val);
 
         for(int i = 0; i < val; i++){
             printf("Val: %d\n", val);
