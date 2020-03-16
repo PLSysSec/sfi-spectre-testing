@@ -110,14 +110,14 @@ $(OUT_DIR)/libpng/libpng16.a: $(OUT_DIR)/libpng/Makefile $(LUCET)
 
 $(OUT_DIR)/zlib_original/Makefile: zlib/configure
 	mkdir -p $(OUT_DIR)/zlib_original
-	cd $(OUT_DIR)/zlib_original && CFLAGS='-O3' $(REPO_ROOT)/zlib/configure
+	cd $(OUT_DIR)/zlib_original && CFLAGS='-O3 -fPIC' $(REPO_ROOT)/zlib/configure
 
 $(OUT_DIR)/zlib_original/libz.a: $(OUT_DIR)/zlib_original/Makefile
 	$(MAKE) -C $(OUT_DIR)/zlib_original
 
 $(OUT_DIR)/libpng_original/Makefile: $(OUT_DIR)/zlib_original/libz.a libpng/CMakeLists.txt
 	mkdir -p $(OUT_DIR)/libpng_original
-	cd $(OUT_DIR)/libpng_original && cmake -DCMAKE_C_FLAGS='-O3' -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib_original/libz.a $(REPO_ROOT)/libpng
+	cd $(OUT_DIR)/libpng_original && cmake -DCMAKE_C_FLAGS='-O3 -fPIC' -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib_original/libz.a $(REPO_ROOT)/libpng
 
 $(OUT_DIR)/libpng_original/libpng16.a: $(OUT_DIR)/libpng_original/Makefile
 	$(MAKE) -C $(OUT_DIR)/libpng_original
