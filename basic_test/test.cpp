@@ -111,6 +111,18 @@ extern "C"
     unsigned int spec_shl(unsigned int v) {
         return v << 3;
     }
+
+    __attribute__((noinline))
+    unsigned int spec_uextend(unsigned short a)
+    {
+        return a;
+    }
+
+    __attribute__((noinline))
+    unsigned short spec_ushorten(unsigned int a)
+    {
+        return a;
+    }
 }
 
 int main(int argc, char** argv)

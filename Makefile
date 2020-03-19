@@ -38,6 +38,15 @@ define generate_lucet_obj_files =
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
+		--pinned-heap-reg \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_pinned.so && \
+	objdump -d $(OUT_DIR)/$(1)_pinned.so > $(OUT_DIR)/$(1)_pinned_so.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
 		--spectre-baseline-loadfence-enable \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_baseline.so && \
 	objdump -d $(OUT_DIR)/$(1)_spectre_baseline.so > $(OUT_DIR)/$(1)_spectre_baseline_so.asm
@@ -76,6 +85,21 @@ define generate_lucet_obj_files =
 		--spectre-tblock-protection cet \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet.so && \
 	objdump -d $(OUT_DIR)/$(1)_spectre_cet.so > $(OUT_DIR)/$(1)_spectre_cet_so.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--spectre-mitigations-enable \
+		--pinned-heap-reg \
+		--pinned-control-flow \
+		--spectre-tblock-protection cet \
+		--spectre-heap-protection mpk \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet_mpk.so && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_cet_mpk.so > $(OUT_DIR)/$(1)_spectre_cet_mpk_so.asm
+
+	touch $(OUT_DIR)/$(1)_all
 endef
 
 ###########################################################################
@@ -84,7 +108,7 @@ $(OUT_DIR)/basic_test/test.wasm: basic_test/test.cpp
 	mkdir -p $(OUT_DIR)/basic_test && \
 	$(WASM_CLANG)++ $(WASM_CFLAGS) $(WASM_LDFLAGS) $< -o $@
 
-$(OUT_DIR)/basic_test/test.so: $(OUT_DIR)/basic_test/test.wasm $(LUCET)
+$(OUT_DIR)/basic_test/test_all: $(OUT_DIR)/basic_test/test.wasm $(LUCET)
 	$(call generate_lucet_obj_files,basic_test/test)
 
 ###########################################################################
@@ -100,7 +124,7 @@ $(OUT_DIR)/libpng/Makefile: $(OUT_DIR)/zlib/libz.a libpng/CMakeLists.txt
 	mkdir -p $(OUT_DIR)/libpng
 	cd $(OUT_DIR)/libpng && cmake -DCMAKE_C_COMPILER=$(WASM_CLANG) -DCMAKE_C_FLAGS='$(WASM_CFLAGS) -DPNG_NO_SETJMP=1' -DCMAKE_EXE_LINKER_FLAGS='$(WASM_LDFLAGS)' -DM_LIBRARY=$(WASM_LIBM) -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib/libz.a -DPNG_SHARED=0 $(REPO_ROOT)/libpng
 
-$(OUT_DIR)/libpng/libpng16.a: $(OUT_DIR)/libpng/Makefile $(LUCET)
+$(OUT_DIR)/libpng/pngtest_all: $(OUT_DIR)/libpng/Makefile $(LUCET)
 	$(MAKE) -C $(OUT_DIR)/libpng
 	# Have to build pngtest manually
 	$(WASM_CLANG) $(WASM_CFLAGS) $(WASM_LDFLAGS) libpng/pngtest.c -I $(OUT_DIR)/libpng/ -I zlib/ -o $(OUT_DIR)/libpng/pngtest.wasm -L $(OUT_DIR)/libpng -L $(OUT_DIR)/zlib -lpng -lz
@@ -119,7 +143,7 @@ $(OUT_DIR)/libpng_original/Makefile: $(OUT_DIR)/zlib_original/libz.a libpng/CMak
 	mkdir -p $(OUT_DIR)/libpng_original
 	cd $(OUT_DIR)/libpng_original && cmake -DCMAKE_C_FLAGS='-O3 -fPIC' -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib_original/libz.a $(REPO_ROOT)/libpng
 
-$(OUT_DIR)/libpng_original/libpng16.a: $(OUT_DIR)/libpng_original/Makefile
+$(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 	$(MAKE) -C $(OUT_DIR)/libpng_original
 
 ###########################################################################
@@ -127,7 +151,7 @@ $(OUT_DIR)/libpng_original/libpng16.a: $(OUT_DIR)/libpng_original/Makefile
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
-build: $(OUT_DIR) $(OUT_DIR)/basic_test/test.so $(OUT_DIR)/libpng_original/libpng16.a $(OUT_DIR)/libpng/libpng16.a
+build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_all $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_all
 
 run_tests:
 	@echo "-------------------"
