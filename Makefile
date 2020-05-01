@@ -24,7 +24,6 @@ define generate_lucet_obj_files =
 		--emit clif \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).clif
 
-
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
@@ -47,57 +46,19 @@ define generate_lucet_obj_files =
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		--spectre-baseline-loadfence-enable \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_baseline.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_baseline.so > $(OUT_DIR)/$(1)_spectre_baseline_so.asm
-
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigations-enable \
-		--pinned-heap-reg \
-		--pinned-control-flow \
+		--spectre-mitigation "strawman" \
 		--emit obj \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre.o && \
-	objdump -d $(OUT_DIR)/$(1)_spectre.o > $(OUT_DIR)/$(1)_spectre.asm
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_strawman.o && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_strawman.o > $(OUT_DIR)/$(1)_spectre_strawman.asm
 
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		--spectre-mitigations-enable \
-		--pinned-heap-reg \
-		--pinned-control-flow \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre.so > $(OUT_DIR)/$(1)_spectre_so.asm
-
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigations-enable \
-		--pinned-heap-reg \
-		--pinned-control-flow \
-		--spectre-tblock-protection cet \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_cet.so > $(OUT_DIR)/$(1)_spectre_cet_so.asm
-
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigations-enable \
-		--pinned-heap-reg \
-		--pinned-control-flow \
-		--spectre-tblock-protection cet \
-		--spectre-heap-protection mpk \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet_mpk.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_cet_mpk.so > $(OUT_DIR)/$(1)_spectre_cet_mpk_so.asm
+		--spectre-mitigation "strawman" \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_strawman.so && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_strawman.so > $(OUT_DIR)/$(1)_spectre_strawman_so.asm
 
 	touch $(OUT_DIR)/$(1)_all
 endef
@@ -160,9 +121,7 @@ run_tests:
 	@echo "Basic Test"
 	@echo "-------------------"
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test.so
-	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_baseline.so
-	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre.so
-	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_strawman.so
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
@@ -170,31 +129,11 @@ run_tests:
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_baseline.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_strawman.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	@echo "-------------------"
 
-check_asm:
-	@echo "-------------------"
-	@echo "Testing"
-	@echo "-------------------"
-	@echo "Basic Test"
-	@echo "-------------------"
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre.asm
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/basic_test/test_spectre_so.asm
-	@echo "-------------------"
-	@echo "PNG Test"
-	@echo "-------------------"
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/libpng/pngtest_spectre.asm
-	./check_mitigations.py --function_filter "guest_func_*" --ignore-switch-table-data True --limit 10 $(OUT_DIR)/libpng/pngtest_spectre_so.asm
-	@echo "-------------------"
-
-
-test: check_asm run_tests
+test: run_tests
 	@echo "Tests completed successfully!"
 
 clean:

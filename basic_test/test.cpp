@@ -8,7 +8,7 @@ typedef struct {
 
 extern "C"
 {
-    const int spec_GL_int_val = 1;
+    const int spec_GL_int_val = 5;
     const char spec_GL_char_val[] = "Testing 123";
 
     __attribute__((noinline))
