@@ -46,7 +46,7 @@ define generate_lucet_obj_files =
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		--spectre-mitigation "strawman" \
+		--spectre-mitigation strawman \
 		--emit obj \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_strawman.o && \
 	objdump -d $(OUT_DIR)/$(1)_spectre_strawman.o > $(OUT_DIR)/$(1)_spectre_strawman.asm
@@ -56,9 +56,28 @@ define generate_lucet_obj_files =
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		--spectre-mitigation "strawman" \
+		--spectre-mitigation strawman \
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_strawman.so && \
 	objdump -d $(OUT_DIR)/$(1)_spectre_strawman.so > $(OUT_DIR)/$(1)_spectre_strawman_so.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--spectre-mitigation loadlfence \
+		--emit obj \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_loadlfence.o && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_loadlfence.o > $(OUT_DIR)/$(1)_spectre_loadlfence.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--spectre-mitigation loadlfence \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_loadlfence.so && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_loadlfence.so > $(OUT_DIR)/$(1)_spectre_loadlfence_so.asm
 
 	touch $(OUT_DIR)/$(1)_all
 endef
@@ -122,6 +141,7 @@ run_tests:
 	@echo "-------------------"
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_strawman.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_loadlfence.so
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
@@ -130,6 +150,8 @@ run_tests:
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_strawman.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_loadlfence.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	@echo "-------------------"
 
