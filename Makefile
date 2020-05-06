@@ -98,6 +98,25 @@ define generate_lucet_obj_files =
 		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_sfi.so && \
 	objdump -d $(OUT_DIR)/$(1)_spectre_sfi.so > $(OUT_DIR)/$(1)_spectre_sfi_so.asm
 
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--spectre-mitigation cet \
+		--emit obj \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet.o && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_cet.o > $(OUT_DIR)/$(1)_spectre_cet.asm
+
+	$(LUCET) \
+		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--spectre-mitigation cet \
+		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet.so && \
+	objdump -d $(OUT_DIR)/$(1)_spectre_cet.so > $(OUT_DIR)/$(1)_spectre_cet_so.asm
+
 	touch $(OUT_DIR)/$(1)_all
 endef
 
@@ -162,6 +181,7 @@ run_tests:
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_strawman.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_loadlfence.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
@@ -174,6 +194,8 @@ run_tests:
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_loadlfence.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	@echo "-------------------"
 
