@@ -144,4 +144,11 @@ int main(int argc, char** argv)
         printf("Test2 failed\n");
         return -1;
     }
+
+    int val3 = spec_switch(3);
+    if (val3 != 11) {
+        printf("Test3 failed\n");
+        return -1;
+    }
+
 }
