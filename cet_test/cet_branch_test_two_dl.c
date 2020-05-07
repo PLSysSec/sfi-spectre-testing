@@ -48,9 +48,14 @@ int main(int argc, char const *argv[])
         -1,
         0);
 
+    if (bitmap == MAP_FAILED) {
+        printf("mmap failed: %s\n", strerror(errno));
+        abort();
+    }
+
     unsigned long legacy_bitmap[2];
     legacy_bitmap[0] = (uintptr_t)bitmap;
-	legacy_bitmap[1] = bitmap_size;
+    legacy_bitmap[1] = bitmap_size;
 
     // Set the bitmap
     // (dl_cet_allocate_legacy_bitmap): Call arch_prctl with ARCH_CET_LEGACY_BITMAP
