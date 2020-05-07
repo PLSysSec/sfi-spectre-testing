@@ -175,8 +175,13 @@ $(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 
 $(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_test.c
 	mkdir -p $(OUT_DIR)/cet_test
+	$(CET_CC) -fcf-protection=full -O3 $< -S -o $@.s
 	$(CET_CC) -fcf-protection=full -g $< -o $@ && \
 	objdump -D $@ > $@.asm
+
+$(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
+	mkdir -p $(OUT_DIR)/cet_test
+	$(CET_CC) $< -o $@
 
 ###########################################################################
 
@@ -216,8 +221,9 @@ run_tests:
 test: run_tests
 	@echo "Tests completed successfully!"
 
-test_cet: $(OUT_DIR)/cet_test/cet_branch_test
+test_cet: $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_test_asm
 	$(OUT_DIR)/cet_test/cet_branch_test
+	@$(OUT_DIR)/cet_test/cet_branch_test_asm; if [ $$? -eq 0 ]; then echo "CET assembly: invalid jump succeeded..."; else echo "CET assembly: caught invalid jump!"; fi
 
 clean:
 	rm -rf out

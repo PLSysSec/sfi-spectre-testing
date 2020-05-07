@@ -4,13 +4,13 @@
 
 void sig_handler(int sig_num)
 {
-    printf("CET caught invalid jump!!!\n");
+    printf("CET C: caught invalid jump!!!\n");
     exit(0);
 }
 
 
 int indirect_call() {
-    printf("Invalid jump succeeded...\n");
+    printf("CET C: invalid jump succeeded...\n");
     return 42;
 }
 
@@ -22,7 +22,6 @@ int main(int argc, char const *argv[])
     signal(SIGABRT, sig_handler);
     signal(SIGSEGV, sig_handler);
 
-    printf("Checking CET...\n");
     char* func_ptr = (char*) indirect_call;
     // When compiled with CET branch checking indirect_call starts with the 4 byte endbr instruction
     // Skip past that
