@@ -57,6 +57,9 @@ int main(int argc, char const *argv[])
     legacy_bitmap[0] = (uintptr_t)bitmap;
     legacy_bitmap[1] = bitmap_size;
 
+    printf("\nstack_end:%p, size:%lx, bitmap:%p, *bitmap:%x\n",
+        __libc_stack_end, bitmap_size, (void*) bitmap, *bitmap);
+
     // Set the bitmap
     // (dl_cet_allocate_legacy_bitmap): Call arch_prctl with ARCH_CET_LEGACY_BITMAP
     # define ARCH_CET_LEGACY_BITMAP 0x3006
