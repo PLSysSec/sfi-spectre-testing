@@ -6,9 +6,9 @@ typedef int (*beginTestType)();
 
 int main(int argc, char const *argv[])
 {
-    printf("Testing CET dynlib\n");
+    printf("Testing Non CET dynlib\n");
     {
-        void* dl = dlopen("./cet_branch_test_dl_helper.so", RTLD_NOW);
+        void* dl = dlopen("./nocet_branch_test_dl_helper.so", RTLD_NOW);
         if (!dl) {
             printf("dlopen failed\n");
             abort();
@@ -25,9 +25,10 @@ int main(int argc, char const *argv[])
             return ret;
         }
     }
-    printf("Testing Non CET dynlib\n");
+
+    printf("Testing CET dynlib\n");
     {
-        void* dl = dlopen("./nocet_branch_test_dl_helper.so", RTLD_NOW);
+        void* dl = dlopen("./cet_branch_test_dl_helper.so", RTLD_NOW);
         if (!dl) {
             printf("dlopen failed\n");
             abort();
