@@ -259,5 +259,8 @@ test_cet: $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_tes
 	@echo "$(OUT_DIR)/cet_test/cet_branch_test_asm"
 	@$(OUT_DIR)/cet_test/cet_branch_test_asm; if [ $$? -eq 0 ]; then echo "CET assembly: invalid jump succeeded..."; else echo "CET assembly: caught invalid jump!"; fi
 
+test_cet_legacy_bitmap: $(OUT_DIR)/cet_test/cet_branch_test_dl_nocetmain
+	cd $(OUT_DIR)/cet_test/ && ./cet_branch_test_dl_nocetmain
+
 clean:
 	rm -rf $(OUT_DIR)
