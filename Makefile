@@ -173,19 +173,28 @@ $(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 
 ###########################################################################
 
-$(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_test.c
+$(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_helper.c cet_test/cet_branch_test.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -fcf-protection=full -O3 $< -S -o $@.s
-	$(CET_CC) -fcf-protection=full -g $< -o $@ && \
+	$(CET_CC) -fcf-protection=full -O3 cet_test/cet_branch_test.c -S -o $@.s
+	$(CET_CC) -fcf-protection=full -O3 cet_test/cet_branch_test.c -o $@ && \
 	objdump -D $@ > $@.asm && \
 	readelf -a $@ > $@.readelf
+	$(CET_CC) -O3 cet_test/cet_branch_test.c -o $@_nocet && \
+	objdump -D $@_nocet > $@_nocet.asm && \
+	readelf -a $@_nocet > $@_nocet.readelf
+
+$(OUT_DIR)/cet_test/cet_branch_test_dl: cet_test/cet_branch_helper.c cet_test/cet_branch_test_dl.c
+	mkdir -p $(OUT_DIR)/cet_test
+	$(CET_CC) -fcf-protection=full -O3 -shared -fPIC cet_test/cet_branch_helper.c -o $@_helper.so
+	$(CET_CC) -fcf-protection=full -O3 cet_test/cet_branch_test_dl.c -ldl -o $@
+	$(CET_CC) -O3 cet_test/cet_branch_test_dl.c -ldl -o $@_nocetmain
 
 $(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -g $< -o $@ && \
+	$(CET_CC) -O3 $< -o $@ && \
 	objdump -D $@ > $@.asm && \
 	readelf -a $@ > $@.readelf
-	$(CET_CC) -fcf-protection=full -g $< -o $@2 && \
+	$(CET_CC) -fcf-protection=full -O3 $< -o $@2 && \
 	objdump -D $@2 > $@2.asm && \
 	readelf -a $@2 > $@2.readelf
 
@@ -227,8 +236,10 @@ run_tests:
 test: run_tests
 	@echo "Tests completed successfully!"
 
-test_cet: $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_test_asm
+test_cet: $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_test_dl $(OUT_DIR)/cet_test/cet_branch_test_asm
 	$(OUT_DIR)/cet_test/cet_branch_test
+	cd $(OUT_DIR)/cet_test/ && ./cet_branch_test_dl
+	cd $(OUT_DIR)/cet_test/ && ./cet_branch_test_dl_nocetmain
 	@$(OUT_DIR)/cet_test/cet_branch_test_asm; if [ $$? -eq 0 ]; then echo "CET assembly: invalid jump succeeded..."; else echo "CET assembly: caught invalid jump!"; fi
 
 clean:
