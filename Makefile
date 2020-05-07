@@ -175,41 +175,41 @@ $(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 
 $(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_helper.c cet_test/cet_branch_test.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -fcf-protection=full -g cet_test/cet_branch_test.c -S -o $@.s
-	$(CET_CC) -fcf-protection=full -g cet_test/cet_branch_test.c -o $@ && \
+	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test.c -S -o $@.s
+	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test.c -o $@ && \
 	objdump -D -f -s $@ > $@.asm && \
 	readelf -a -n $@ > $@.readelf
-	$(CET_CC) -g cet_test/cet_branch_test.c -o $@_nocet && \
+	$(CET_CC) -Wall -Werror -g cet_test/cet_branch_test.c -o $@_nocet && \
 	objdump -D -f -s $@_nocet > $@_nocet.asm && \
 	readelf -a -n $@_nocet > $@_nocet.readelf
 
 
 $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so: cet_test/cet_branch_helper.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -fcf-protection=full -g -shared -fPIC $< -o $@
+	$(CET_CC) -Wall -Werror -fcf-protection=full -g -shared -fPIC $< -o $@
 
 $(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so: cet_test/nocet_branch_helper.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -g -shared -fPIC $< -o $@
+	$(CET_CC) -Wall -Werror -g -shared -fPIC $< -o $@
 
 $(OUT_DIR)/cet_test/cet_branch_test_dl: $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so cet_test/cet_branch_test_dl.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -fcf-protection=full -g cet_test/cet_branch_test_dl.c -ldl -o $@
+	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test_dl.c -ldl -o $@
 
 $(OUT_DIR)/cet_test/cet_branch_test_dl_nocetmain: $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so cet_test/cet_branch_test_dl.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -g cet_test/cet_branch_test_dl.c -ldl -o $@
+	$(CET_CC) -Wall -Werror -g cet_test/cet_branch_test_dl.c -ldl -o $@
 
 $(OUT_DIR)/cet_test/cet_branch_test_two_dl: $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so $(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so cet_test/cet_branch_test_two_dl.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -fcf-protection=full -g cet_test/cet_branch_test_two_dl.c -ldl -o $@
+	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test_two_dl.c -ldl -o $@
 
 $(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -g $< -o $@ && \
+	$(CET_CC) -Wall -Werror -g $< -o $@ && \
 	objdump -D -f -s $@ > $@.asm && \
 	readelf -a -n $@ > $@.readelf
-	$(CET_CC) -fcf-protection=full -g $< -o $@2 && \
+	$(CET_CC) -Wall -Werror -fcf-protection=full -g $< -o $@2 && \
 	objdump -D -f -s $@2 > $@2.asm && \
 	readelf -a -n $@2 > $@2.readelf
 
