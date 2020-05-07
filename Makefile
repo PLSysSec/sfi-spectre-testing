@@ -166,10 +166,17 @@ $(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 
 ###########################################################################
 
+$(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_test.c
+	mkdir -p $(OUT_DIR)/cet_test
+	gcc-9 -fcf-protection=full -g $< -o $@ && \
+	objdump -D $@ > $@.asm
+
+###########################################################################
+
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
-build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_all $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_all
+build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_all $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_all $(OUT_DIR)/cet_test/cet_branch_test
 
 run_tests:
 	@echo "-------------------"
@@ -201,6 +208,9 @@ run_tests:
 
 test: run_tests
 	@echo "Tests completed successfully!"
+
+test_cet: $(OUT_DIR)/cet_test/cet_branch_test
+	$(OUT_DIR)/cet_test/cet_branch_test
 
 clean:
 	rm -rf out
