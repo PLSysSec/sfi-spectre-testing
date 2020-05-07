@@ -188,7 +188,7 @@ $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so: cet_test/cet_branch_helper.c
 	mkdir -p $(OUT_DIR)/cet_test
 	$(CET_CC) -fcf-protection=full -g -shared -fPIC $< -o $@
 
-$(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so: cet_test/cet_branch_helper.c
+$(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so: cet_test/nocet_branch_helper.c
 	mkdir -p $(OUT_DIR)/cet_test
 	$(CET_CC) -g -shared -fPIC $< -o $@
 
