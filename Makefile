@@ -177,11 +177,17 @@ $(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_test.c
 	mkdir -p $(OUT_DIR)/cet_test
 	$(CET_CC) -fcf-protection=full -O3 $< -S -o $@.s
 	$(CET_CC) -fcf-protection=full -g $< -o $@ && \
-	objdump -D $@ > $@.asm
+	objdump -D $@ > $@.asm && \
+	readelf -a $@ > $@.readelf
 
 $(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) $< -o $@
+	$(CET_CC) -g $< -o $@ && \
+	objdump -D $@ > $@.asm && \
+	readelf -a $@ > $@.readelf
+	$(CET_CC) -fcf-protection=full -g $< -o $@2 && \
+	objdump -D $@2 > $@2.asm && \
+	readelf -a $@2 > $@2.readelf
 
 ###########################################################################
 
