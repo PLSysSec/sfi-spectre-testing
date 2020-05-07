@@ -14,6 +14,13 @@ WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
 RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 export RUST_BACKTRACE=1
+CET_CC := $(shell \
+	if [ -e "$$(which gcc-9)" ]; then \
+		echo gcc-9; \
+	else \
+		echo "gcc"; \
+	fi \
+)
 
 define generate_lucet_obj_files =
 	$(LUCET) \
@@ -168,7 +175,7 @@ $(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 
 $(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_test.c
 	mkdir -p $(OUT_DIR)/cet_test
-	gcc-9 -fcf-protection=full -g $< -o $@ && \
+	$(CET_CC) -fcf-protection=full -g $< -o $@ && \
 	objdump -D $@ > $@.asm
 
 ###########################################################################
