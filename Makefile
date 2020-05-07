@@ -232,4 +232,4 @@ test_cet: $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_tes
 	@$(OUT_DIR)/cet_test/cet_branch_test_asm; if [ $$? -eq 0 ]; then echo "CET assembly: invalid jump succeeded..."; else echo "CET assembly: caught invalid jump!"; fi
 
 clean:
-	rm -rf out
+	rm -rf $(OUT_DIR)
