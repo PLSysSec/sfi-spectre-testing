@@ -8,11 +8,14 @@ typedef struct {
 
 extern "C"
 {
+    const int spec_GL_int_val = 5;
+    const char spec_GL_char_val[] = "Testing 123";
+
     __attribute__((noinline))
     int spec_singleBranch(int val)
     {
         if (val) {
-            return 5;
+            return spec_GL_int_val;
         } else {
             return 7;
         }
@@ -26,6 +29,8 @@ extern "C"
         } else {
             printf("else side\n");
         }
+
+        printf("%s\n", spec_GL_char_val);
 
         for(int i = 0; i < val; i++){
             printf("Val: %d\n", val);
@@ -106,6 +111,18 @@ extern "C"
     unsigned int spec_shl(unsigned int v) {
         return v << 3;
     }
+
+    __attribute__((noinline))
+    unsigned int spec_uextend(unsigned short a)
+    {
+        return a;
+    }
+
+    __attribute__((noinline))
+    unsigned short spec_ushorten(unsigned int a)
+    {
+        return a;
+    }
 }
 
 int main(int argc, char** argv)
@@ -127,4 +144,11 @@ int main(int argc, char** argv)
         printf("Test2 failed\n");
         return -1;
     }
+
+    int val3 = spec_switch(3);
+    if (val3 != 11) {
+        printf("Test3 failed\n");
+        return -1;
+    }
+
 }

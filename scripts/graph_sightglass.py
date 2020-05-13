@@ -39,8 +39,7 @@ def main():
         benches = bencheset[idx]
         n = nset[idx]
         fig = plt.figure(idx)
-        make_graph(benches, n, fig)
-    plt.show()
+        make_graph(benches, n, fig, filenames[idx] + ".pdf", filenames[idx] + "_stats.txt")
 
 def empty_vals(n):
   vals = []
@@ -48,7 +47,7 @@ def empty_vals(n):
       vals.append([])
   return vals
 
-def make_graph(benches, n, fig):
+def make_graph(benches, n, fig, outfile, statsfile):
     idx = 0
     labels = []
     implementations = []    
@@ -58,6 +57,9 @@ def make_graph(benches, n, fig):
     
     ax = fig.add_subplot(111)
 
+    plt.rcParams['pdf.fonttype'] = 42 # true type font
+    plt.rcParams['font.family'] = 'Times New Roman'
+    plt.rcParams['font.size'] = '8'
 
     for bench in benches:
       if not bench or bench[0] == "seqhash":
@@ -100,8 +102,10 @@ def make_graph(benches, n, fig):
     for i in range(n):
         result_average = sum(vals[i]) / N 
         result_median = median(vals[i])
-        print(f"{implementations[i]} average = {result_average} {implementations[i]} median = {result_median}")
+        with open(statsfile, "a") as myfile:
+          myfile.write(f"{implementations[i]} average = {result_average} {implementations[i]} median = {result_median}\n")
 
+    plt.savefig(outfile, format="pdf")
     #plt.show()
 
 
