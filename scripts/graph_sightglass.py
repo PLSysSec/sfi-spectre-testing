@@ -79,6 +79,8 @@ def make_graph(benches, n, fig):
     ind = np.arange(N)
     labels = tuple(labels)
 
+    print(vals)
+
     rects = []
     for idx,val in enumerate(vals):
       rects.append(ax.bar(ind + width*idx, val, width))
