@@ -223,7 +223,9 @@ $(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
-build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_all $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_all $(OUT_DIR)/cet_test/cet_branch_test
+build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_all $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_all
+
+build-cet-tests: $(OUT_DIR) $(OUT_DIR)/cet_test/cet_status $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so $(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so $(OUT_DIR)/cet_test/cet_branch_test_dl $(OUT_DIR)/cet_test/cet_branch_test_dl_nocetmain $(OUT_DIR)/cet_test/cet_branch_test_two_dl $(OUT_DIR)/cet_test/cet_branch_test_asm
 
 run_tests:
 	@echo "-------------------"
