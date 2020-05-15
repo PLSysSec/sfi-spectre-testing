@@ -13,6 +13,7 @@ WASM_CFLAGS=--sysroot /opt/wasi-sdk/share/wasi-sysroot/ -O3
 WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
 RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
+RUN_WASM_CET_SO=$(LUCET_SRC)/target-cet/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 export RUST_BACKTRACE=1
 CET_CC := $(shell \
 	if [ -e "$$(which gcc-9)" ]; then \
@@ -230,7 +231,7 @@ run_tests:
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_strawman.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_loadlfence.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
-	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
+	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
@@ -244,7 +245,7 @@ run_tests:
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	@echo "-------------------"
 
