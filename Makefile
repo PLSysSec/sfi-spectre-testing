@@ -174,6 +174,10 @@ $(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 
 ###########################################################################
 
+$(OUT_DIR)/cet_test/cet_status: cet_test/cet_status.c
+	mkdir -p $(OUT_DIR)/cet_test
+	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_status.c -o $@
+
 $(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_helper.c cet_test/cet_branch_test.c
 	mkdir -p $(OUT_DIR)/cet_test
 	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test.c -S -o $@.s
