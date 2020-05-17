@@ -23,32 +23,39 @@ CET_CC := $(shell \
 	fi \
 )
 
-define generate_lucet_obj_files =
+.PRECIOUS: %.clif
+%.clif: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--emit clif \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).clif
+		$< -o $@
 
+.PRECIOUS: %.so
+%.so: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1).so && \
-	objdump -d $(OUT_DIR)/$(1).so > $(OUT_DIR)/$(1)_so.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_pinned.so
+%_pinned.so: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--pinned-heap-reg \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_pinned.so && \
-	objdump -d $(OUT_DIR)/$(1)_pinned.so > $(OUT_DIR)/$(1)_pinned_so.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_strawman.o
+%_spectre_strawman.o: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
@@ -56,18 +63,22 @@ define generate_lucet_obj_files =
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation strawman \
 		--emit obj \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_strawman.o && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_strawman.o > $(OUT_DIR)/$(1)_spectre_strawman.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_strawman.so
+%_spectre_strawman.so: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation strawman \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_strawman.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_strawman.so > $(OUT_DIR)/$(1)_spectre_strawman_so.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_loadlfence.o
+%_spectre_loadlfence.o: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
@@ -75,18 +86,22 @@ define generate_lucet_obj_files =
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation loadlfence \
 		--emit obj \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_loadlfence.o && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_loadlfence.o > $(OUT_DIR)/$(1)_spectre_loadlfence.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_loadlfence.so
+%_spectre_loadlfence.so: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation loadlfence \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_loadlfence.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_loadlfence.so > $(OUT_DIR)/$(1)_spectre_loadlfence_so.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_sfi.o
+%_spectre_sfi.o: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
@@ -94,18 +109,22 @@ define generate_lucet_obj_files =
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation sfi \
 		--emit obj \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_sfi.o && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_sfi.o > $(OUT_DIR)/$(1)_spectre_sfi.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_sfi.so
+%_spectre_sfi.so: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation sfi \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_sfi.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_sfi.so > $(OUT_DIR)/$(1)_spectre_sfi_so.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_cet.o
+%_spectre_cet.o: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
@@ -113,20 +132,23 @@ define generate_lucet_obj_files =
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation cet \
 		--emit obj \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet.o && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_cet.o > $(OUT_DIR)/$(1)_spectre_cet.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_cet.so
+%_spectre_cet.so: %.wasm $(LUCET)
 	$(LUCET) \
 		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
 		--guard-size "4GiB" \
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--spectre-mitigation cet \
-		$(OUT_DIR)/$(1).wasm -o $(OUT_DIR)/$(1)_spectre_cet.so && \
-	objdump -d $(OUT_DIR)/$(1)_spectre_cet.so > $(OUT_DIR)/$(1)_spectre_cet_so.asm
+		$< -o $@ && \
+	objdump -d $@ > $@.asm
 
-	touch $(OUT_DIR)/$(1)_all
-endef
+.PRECIOUS: %_all
+%_all: $(LUCET) %.clif %.so %_pinned.so %_spectre_strawman.o %_spectre_strawman.so %_spectre_loadlfence.o %_spectre_loadlfence.so %_spectre_sfi.o %_spectre_sfi.so %_spectre_cet.o %_spectre_cet.so
+	touch $@
 
 ###########################################################################
 
@@ -134,8 +156,7 @@ $(OUT_DIR)/basic_test/test.wasm: basic_test/test.cpp
 	mkdir -p $(OUT_DIR)/basic_test && \
 	$(WASM_CLANG)++ $(WASM_CFLAGS) $(WASM_LDFLAGS) $< -o $@
 
-$(OUT_DIR)/basic_test/test_all: $(OUT_DIR)/basic_test/test.wasm $(LUCET)
-	$(call generate_lucet_obj_files,basic_test/test)
+$(OUT_DIR)/basic_test/test_setup: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_all
 
 ###########################################################################
 
@@ -150,11 +171,12 @@ $(OUT_DIR)/libpng/Makefile: $(OUT_DIR)/zlib/libz.a libpng/CMakeLists.txt
 	mkdir -p $(OUT_DIR)/libpng
 	cd $(OUT_DIR)/libpng && cmake -DCMAKE_C_COMPILER=$(WASM_CLANG) -DCMAKE_C_FLAGS='$(WASM_CFLAGS) -DPNG_NO_SETJMP=1' -DCMAKE_EXE_LINKER_FLAGS='$(WASM_LDFLAGS)' -DM_LIBRARY=$(WASM_LIBM) -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib/libz.a -DPNG_SHARED=0 $(REPO_ROOT)/libpng
 
-$(OUT_DIR)/libpng/pngtest_all: $(OUT_DIR)/libpng/Makefile $(LUCET)
+$(OUT_DIR)/libpng/pngtest.wasm: $(OUT_DIR)/libpng/Makefile
 	$(MAKE) -C $(OUT_DIR)/libpng
 	# Have to build pngtest manually
 	$(WASM_CLANG) $(WASM_CFLAGS) $(WASM_LDFLAGS) libpng/pngtest.c -I $(OUT_DIR)/libpng/ -I zlib/ -o $(OUT_DIR)/libpng/pngtest.wasm -L $(OUT_DIR)/libpng -L $(OUT_DIR)/zlib -lpng -lz
-	$(call generate_lucet_obj_files,libpng/pngtest)
+
+$(OUT_DIR)/libpng/pngtest_setup: $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_all
 
 ###########################################################################
 
@@ -223,9 +245,7 @@ $(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
-build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_all $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_all
-
-build-cet-tests: $(OUT_DIR) $(OUT_DIR)/cet_test/cet_status $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so $(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so $(OUT_DIR)/cet_test/cet_branch_test_dl $(OUT_DIR)/cet_test/cet_branch_test_dl_nocetmain $(OUT_DIR)/cet_test/cet_branch_test_two_dl $(OUT_DIR)/cet_test/cet_branch_test_asm
+build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_setup $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_setup
 
 run_tests:
 	@echo "-------------------"
