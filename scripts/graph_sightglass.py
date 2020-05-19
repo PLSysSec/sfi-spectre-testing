@@ -12,7 +12,13 @@ def load_benches(filename):
         lines = f.read().split("\n")
 
     benches = [line.split() for line in lines]
-    return benches[1:-1]
+    benches = [bench for bench in benches if bench and bench[1] != "0.Reference"][1:]
+
+    for thing in benches:
+      print(thing)
+    #print(benches)
+    print("=========================")
+    return benches#[1:-1]
 
 def compute_n(benches):
   implementations = set()
@@ -39,7 +45,32 @@ def main():
         benches = bencheset[idx]
         n = nset[idx]
         fig = plt.figure(idx)
+        print(n,len(benches))
         make_graph(benches, n, fig, filenames[idx] + ".pdf", filenames[idx] + "_stats.txt")
+
+    #print(filenames)
+    fig = plt.figure(idx+1)
+    all_benches = []
+    all_n = sum(nset)
+    for bench in bencheset:
+      all_benches.extend(bench)
+        #all_benches.extend(bencheset[idx])
+        #all_n = sum(nset)
+        #all_benches = sum(bencheset)
+        #all_n = sum(nset)
+    #print(all_n)
+    #print(len(all_benches))
+    print(filenames)
+    filename_base = "/".join(filenames[0].split("/")[:-1]) + "/"
+    print(filename_base)
+    make_graph(sorted(all_benches), all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt")
+    '''
+    fig = plt.figure(idx+1)
+    for idx in range(len(nset)):
+        benches = bencheset[idx]
+        n = nset[idx]
+        make_graph(benches, n, fig, "combined.pdf", "combined_stats.txt")
+    '''
 
 def empty_vals(n):
   vals = []
@@ -81,7 +112,7 @@ def make_graph(benches, n, fig, outfile, statsfile):
     ind = np.arange(N)
     labels = tuple(labels)
 
-    print(vals)
+    #print(vals)
 
     rects = []
     for idx,val in enumerate(vals):
