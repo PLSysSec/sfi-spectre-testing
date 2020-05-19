@@ -16,7 +16,7 @@ RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --m
 RUN_WASM_CET_SO=$(LUCET_SRC)/target-cet/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 export RUST_BACKTRACE=1
 CET_CC := $(shell \
-	if [ -e "$$(which gcc-9)" ]; then \
+	if [ -e "$$(command -v gcc-9)" ]; then \
 		echo gcc-9; \
 	else \
 		echo "gcc"; \
