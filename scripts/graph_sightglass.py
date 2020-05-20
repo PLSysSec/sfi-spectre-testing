@@ -104,7 +104,7 @@ def make_graph(benches, n, fig, outfile, statsfile):
     for bench in benches:
       # record the different implementations in order
       if idx < n:
-        implementations.append(bench[1])
+        implementations.append(bench[1].split(".")[1])
 
       ratio = float(bench[2])
       # record the function name
