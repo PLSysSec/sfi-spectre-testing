@@ -133,6 +133,7 @@ def make_graph(benches, n, fig, outfile, statsfile):
     plt.xticks(rotation=90)
 
     ax.set_xticklabels(labels)
+    plt.locator_params(axis='y', nbins=10)
     ax.legend( tuple(rects), implementations )
     fig.subplots_adjust(bottom=0.25)
 
