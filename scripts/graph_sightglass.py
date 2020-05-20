@@ -10,68 +10,64 @@ def median(lst):
 def load_benches(filename):
     with open(filename) as f:
         lines = f.read().split("\n")
+    benches = [line.split() for line in lines if line][1:]
+    return benches
 
-    benches = [line.split() for line in lines]
-    benches = [bench for bench in benches if bench and bench[1] != "0.Reference"][1:]
-
-    for thing in benches:
-      print(thing)
-    #print(benches)
-    print("=========================")
-    return benches#[1:-1]
-
+'''
+Count the number of implementations
+'''
 def compute_n(benches):
   implementations = set()
   n = 0
   for bench in benches:
-      if not bench or bench[0] == "seqhash":
-        continue
+      #if not bench or bench[0] == "seqhash":
+      #  continue
       if bench[1] not in implementations:
         implementations.add(bench[1])
         n += 1
   return n
 
-def main():
-    #filename = sys.argv[1]
-    filenames = [filename for filename in sys.argv[1:]]
-    print(filenames)
-    #n = int(sys.argv[2])
-    #benches = load_benches(filename)
-    bencheset = [load_benches(filename) for filename in filenames]
-    #n = compute_n(benches) 
-    nset = [compute_n(benches) for benches in bencheset]
-    #print("n = ", n)
-    for idx in range(len(nset)):
-        benches = bencheset[idx]
-        n = nset[idx]
-        fig = plt.figure(idx)
-        print(n,len(benches))
-        make_graph(benches, n, fig, filenames[idx] + ".pdf", filenames[idx] + "_stats.txt")
+def get_all_benches(bencheset):
+    all_benches = []
+    #flatten into 1 list
+    # processed_benches = [(bench,implementation,mean)]
+    for benches in bencheset:
+        processed_benches = [bench[:2] + bench[-1:] for bench in benches]
+        all_benches.extend(processed_benches)
 
-    #print(filenames)
-    fig = plt.figure(idx+1)
+    # Get raw execution times for reference implementation
+    ref_performance = {}
+    for bench in all_benches:
+      if bench[1] == "1.Reference":
+        ref_performance[bench[0]] = float(bench[2]) 
+
+    #Normalize benchmarks
+    final_benches = []
+    for bench in all_benches:
+      name = bench[0]
+      t = float(bench[-1]) / ref_performance[name]
+      final_benches.append(bench[:2] + [t])
+
+    final_benches = sorted(final_benches)
+    return final_benches 
+    
+
+def main():
+    filenames = [filename for filename in sys.argv[1:]]
+    # 1. get data from supplied filenames
+    bencheset = [load_benches(filename) for filename in filenames]
+    nset = [compute_n(benches) for benches in bencheset]
+   
+    fig = plt.figure()
     all_benches = []
     all_n = sum(nset)
-    for bench in bencheset:
-      all_benches.extend(bench)
-        #all_benches.extend(bencheset[idx])
-        #all_n = sum(nset)
-        #all_benches = sum(bencheset)
-        #all_n = sum(nset)
-    #print(all_n)
-    #print(len(all_benches))
-    print(filenames)
+    # 2. Process and normalize data
+    all_benches = get_all_benches(bencheset)
+    
     filename_base = "/".join(filenames[0].split("/")[:-1]) + "/"
-    print(filename_base)
-    make_graph(sorted(all_benches), all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt")
-    '''
-    fig = plt.figure(idx+1)
-    for idx in range(len(nset)):
-        benches = bencheset[idx]
-        n = nset[idx]
-        make_graph(benches, n, fig, "combined.pdf", "combined_stats.txt")
-    '''
-
+    # 3. generate graph
+    make_graph(all_benches, all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt")
+   
 def empty_vals(n):
   vals = []
   for jdx in range(n):
@@ -79,12 +75,14 @@ def empty_vals(n):
   return vals
 
 def make_graph(benches, n, fig, outfile, statsfile):
+    #for bench in benches:
+    #  print(bench)
     idx = 0
     labels = []
     implementations = []    
     vals = empty_vals(n)
 
-    width = (1.0 / (n + 1))        # the width of the bars
+    width = (1.0 / (n + 1))  # the width of the bars
     
     ax = fig.add_subplot(111)
 
@@ -93,43 +91,40 @@ def make_graph(benches, n, fig, outfile, statsfile):
     plt.rcParams['font.size'] = '8'
 
     for bench in benches:
-      if not bench or bench[0] == "seqhash":
-        continue
+      # record the different implementations in order
       if idx < n:
         implementations.append(bench[1])
 
       ratio = float(bench[2])
+      # record the function name
       if idx % n == 0:
           labels.append(bench[0])
 
+      # sort the test cases into bins by implementation
       for edx in range(n):
           if idx % n == edx:
               vals[edx].append(ratio)
-    
       idx += 1
     
     N = len(labels)
     ind = np.arange(N)
     labels = tuple(labels)
 
-    #print(vals)
-
     rects = []
     for idx,val in enumerate(vals):
       rects.append(ax.bar(ind + width*idx, val, width))
 
-
+    # Clean up graph
     ax.set_xlabel('Sightglass Benchmarks')
     ax.set_ylabel('Relative Execution Time')
     ax.set_xticks(ind+width)
     plt.xticks(rotation=90)
 
     ax.set_xticklabels(labels)
-    #print(rects, implementations)
     ax.legend( tuple(rects), implementations )
     fig.subplots_adjust(bottom=0.25)
 
-
+    # Record summary stats and save file
     for i in range(n):
         result_average = sum(vals[i]) / N 
         result_median = median(vals[i])
@@ -137,7 +132,6 @@ def make_graph(benches, n, fig, outfile, statsfile):
           myfile.write(f"{implementations[i]} average = {result_average} {implementations[i]} median = {result_median}\n")
 
     plt.savefig(outfile, format="pdf")
-    #plt.show()
 
 
 if __name__== "__main__":
