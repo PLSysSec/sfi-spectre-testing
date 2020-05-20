@@ -11,6 +11,9 @@ def load_benches(filename):
     with open(filename) as f:
         lines = f.read().split("\n")
     benches = [line.split() for line in lines if line][1:]
+    #print(filename)
+    #for bench in benches:
+    #  print(bench)
     return benches
 
 '''
@@ -30,9 +33,9 @@ def compute_n(benches):
 def get_all_benches(bencheset):
     all_benches = []
     #flatten into 1 list
-    # processed_benches = [(bench,implementation,mean)]
+    # processed_benches = [(bench,implementation,median)]
     for benches in bencheset:
-        processed_benches = [bench[:2] + bench[-1:] for bench in benches]
+        processed_benches = [bench[:2] + [bench[3]] for bench in benches]
         all_benches.extend(processed_benches)
 
     # Get raw execution times for reference implementation
@@ -49,23 +52,31 @@ def get_all_benches(bencheset):
       final_benches.append(bench[:2] + [t])
 
     final_benches = sorted(final_benches)
+    #print("All benches:")
+    #for thing in final_benches:
+    #  print(thing)
     return final_benches 
     
-
-def main():
-    filenames = [filename for filename in sys.argv[1:]]
+def load_benches_from_files(filenames):
+    #filenames = [filename for filename in sys.argv[1:]]
     # 1. get data from supplied filenames
     bencheset = [load_benches(filename) for filename in filenames]
     nset = [compute_n(benches) for benches in bencheset]
    
-    fig = plt.figure()
     all_benches = []
     all_n = sum(nset)
     # 2. Process and normalize data
     all_benches = get_all_benches(bencheset)
+    return all_n,all_benches
+
+def main():
+
+    filenames = sys.argv[1:]
+    all_n,all_benches = load_benches_from_files(filenames)
     
     filename_base = "/".join(filenames[0].split("/")[:-1]) + "/"
     # 3. generate graph
+    fig = plt.figure()
     make_graph(all_benches, all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt")
    
 def empty_vals(n):
@@ -106,6 +117,7 @@ def make_graph(benches, n, fig, outfile, statsfile):
               vals[edx].append(ratio)
       idx += 1
     
+    print("Implementations Found: ", implementations)
     N = len(labels)
     ind = np.arange(N)
     labels = tuple(labels)
@@ -134,6 +146,33 @@ def make_graph(benches, n, fig, outfile, statsfile):
     plt.savefig(outfile, format="pdf")
 
 
+
+def test3(filenames):
+    f1,f2,f3 = filenames
+    all_n1,all_benches1 = load_benches_from_files([f1,f2,f3])
+    all_n2,all_benches2 = load_benches_from_files([f1,f3,f2])
+    all_n3,all_benches3 = load_benches_from_files([f2,f1,f3])
+    all_n4,all_benches4 = load_benches_from_files([f2,f3,f1])
+    all_n5,all_benches5 = load_benches_from_files([f3,f1,f2])
+    all_n6,all_benches6 = load_benches_from_files([f3,f2,f1])
+    assert(all_n1 == all_n2)
+    assert(all_n1 == all_n3)
+    assert(all_n1 == all_n4)
+    assert(all_n1 == all_n5)
+    assert(all_n1 == all_n6)
+
+    assert(all_benches1 == all_benches2)
+    assert(all_benches1 == all_benches3)
+    assert(all_benches1 == all_benches4)
+    assert(all_benches1 == all_benches5)
+    assert(all_benches1 == all_benches6)
+
+    print("All tests passed")
+
+
+
 if __name__== "__main__":
+  if len(sys.argv) == 4:
+      test3(sys.argv[1:])
   main()
 
