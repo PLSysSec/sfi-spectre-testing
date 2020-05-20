@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-prefix = "sfi-spectre-spec/result/"
+#prefix = "sfi-spectre-spec/result/"
 
 #result_codes = {}
 #times = defaultdict(list)
@@ -22,8 +22,8 @@ def load_data(input_path):
         lines = data.split('\n')
     return lines
 
-def get_lock_num():
-    path = prefix + "lock.CPU2006"
+def get_lock_num(result_path):
+    path = result_path + "/lock.CPU2006"
     with open(path, 'r') as f:
         data = f.read().strip()
     return data
@@ -33,29 +33,23 @@ def get_lock_num():
 def summarise(input_path):
     times = {}
     mitigation_name = ""
-    try:
-        lines = load_data(input_path)
-    except:
-        return ("",{})
+    #try:
+    lines = load_data(input_path)
+    #except:
+    #    return ("",{})
     for line in lines:
         if "spec.cpu2006.results" in line:
             if ".valid" in line:
                 name = line.split('.')[3]
                 result_code = line.split()[-1]
-                #assert(name not in result_codes)
-                #result_codes[name] = result_code
                 nameset.add(name)
-                #print(name, result_code)
             if ".reported_time" in line:
                 name = line.split('.')[3]
                 success_code = line.split()[-1]
                 times[name] = float(success_code)
-                #print(name, success_code)
         if "spec.cpu2006.ext" in line:
-                #print(line)
                 mitigation_name = line.split()[1]
 
-    #assert(mitigation_name != "")
     return (mitigation_name,times)
 
 def all_times_to_vals(all_times):
@@ -68,8 +62,7 @@ def all_times_to_vals(all_times):
     return vals
 
 
-
-def make_graph(all_times):
+def make_graph(all_times, output_path):
     fig = plt.figure()
     num_mitigations = len(all_times)
     num_benches = len(next(iter(all_times.values()))) # get any element
@@ -103,15 +96,28 @@ def make_graph(all_times):
     for i in range(num_mitigations):
         result_average = sum(vals[i]) / num_benches
         result_median = median(vals[i])
-        print(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}")
+        #print(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}")
+        with open(output_path + "/stats", "a") as myfile:
+            myfile.write(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}\n")
+
+    plt.savefig(output_path + "/graph", format="pdf")
+    '''
+    for i in range(num_mitigations):
+        result_average = sum(vals[i]) / N 
+        result_median = median(vals[i])
+        with open(statsfile, "a") as myfile:
+          myfile.write(f"{implementations[i]} average = {result_average} {implementations[i]} median = {result_median}\n")
+
+    plt.savefig(outfile, format="pdf")
+    '''
 
     plt.show()
 
-def get_merged_summary(n):
-    int_input_path = prefix + f"CINT2006.{n}.ref.rsf"
-    fp_input_path = prefix + f"CFP2006.{n}.ref.rsf"
+def get_merged_summary(result_path, n):
+    int_input_path = f"{result_path}/CINT2006.{str(n).zfill(3)}.ref.rsf"
+    fp_input_path  = f"{result_path}/CFP2006.{str(n).zfill(3)}.ref.rsf"
     name1,int_times = summarise(int_input_path)
-    name2,fp_times = summarise(fp_input_path)
+    name2,fp_times  = summarise(fp_input_path)
     times = {}
     times.update(int_times)
     times.update(fp_times)
@@ -130,27 +136,26 @@ def normalize_times(times):
     return dict(normalized_times)
 
 # "spec.cpu2006.results.464_h264ref.base.000.valid:"
-def run():
-    lock_num = int(get_lock_num())
-    name1,times1 = get_merged_summary(lock_num - 2)
-    name2,times2 = get_merged_summary(lock_num - 1)
-    name3,times3 = get_merged_summary(lock_num)
-    times = {name1 : times1, name2 : times2, name3 : times3}
-    print(times)
-
-    normalized_times = normalize_times(times)
-    #print(normalized_times)
+def run(result_path, n, output_path):
+    lock_num = int(get_lock_num(result_path))
+    all_times = {}
+    for idx in range(n):
+        name,times = get_merged_summary(result_path, lock_num - n + idx)
+        print(name, times)
+        all_times[name] = times
+   
+    normalized_times = normalize_times(all_times)
    
     #{mitigation name -> {}}
-    make_graph(normalized_times)
+    make_graph(normalized_times, output_path)
   
 
 
 def main():
-    if len(sys.argv) != 1:
-        print("Usage: python spec_stats.py")
+    if len(sys.argv) != 4:
+        print("Usage: python spec_stats.py <path to sfi spec file> <# of mitigations> <output path>")
         sys.exit()
-    run()
+    run(sys.argv[1], int(sys.argv[2]), sys.argv[3])
 
 if __name__ == '__main__':
     main()
