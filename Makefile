@@ -13,7 +13,16 @@ WASM_CFLAGS=--sysroot /opt/wasi-sdk/share/wasi-sysroot/ -O3
 WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
 RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
-RUN_WASM_CET_SO=$(LUCET_SRC)/target-cet/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
+
+# Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
+ifdef REALLY_USE_CET
+	RUN_WASM_CET_SO=$(LUCET_SRC)/target-cet/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
+	CET_CFLAGS:=-fcf-protection=full
+else
+	RUN_WASM_CET_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
+	CET_CFLAGS:=
+endif
+
 export RUST_BACKTRACE=1
 CET_CC := $(shell \
 	if [ -e "$$(command -v gcc-9)" ]; then \
@@ -198,12 +207,12 @@ $(OUT_DIR)/libpng_original/png_test: $(OUT_DIR)/libpng_original/Makefile
 
 $(OUT_DIR)/cet_test/cet_status: cet_test/cet_status.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_status.c -o $@
+	$(CET_CC) -Wall -Werror $(CET_CFLAGS) -g cet_test/cet_status.c -o $@
 
 $(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_helper.c cet_test/cet_branch_test.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test.c -S -o $@.s
-	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test.c -o $@ && \
+	$(CET_CC) -Wall -Werror $(CET_CFLAGS) -g cet_test/cet_branch_test.c -S -o $@.s
+	$(CET_CC) -Wall -Werror $(CET_CFLAGS) -g cet_test/cet_branch_test.c -o $@ && \
 	objdump -D -f -s $@ > $@.asm && \
 	readelf -a -n $@ > $@.readelf
 	$(CET_CC) -Wall -Werror -g cet_test/cet_branch_test.c -o $@_nocet && \
@@ -213,7 +222,7 @@ $(OUT_DIR)/cet_test/cet_branch_test: cet_test/cet_branch_helper.c cet_test/cet_b
 
 $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so: cet_test/cet_branch_helper.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -Wall -Werror -fcf-protection=full -g -shared -fPIC $< -o $@
+	$(CET_CC) -Wall -Werror $(CET_CFLAGS) -g -shared -fPIC $< -o $@
 
 $(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so: cet_test/nocet_branch_helper.c
 	mkdir -p $(OUT_DIR)/cet_test
@@ -221,7 +230,7 @@ $(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so: cet_test/nocet_branch_helper
 
 $(OUT_DIR)/cet_test/cet_branch_test_dl: $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so cet_test/cet_branch_test_dl.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test_dl.c -ldl -o $@
+	$(CET_CC) -Wall -Werror $(CET_CFLAGS) -g cet_test/cet_branch_test_dl.c -ldl -o $@
 
 $(OUT_DIR)/cet_test/cet_branch_test_dl_nocetmain: $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so cet_test/cet_branch_test_dl.c
 	mkdir -p $(OUT_DIR)/cet_test
@@ -229,14 +238,14 @@ $(OUT_DIR)/cet_test/cet_branch_test_dl_nocetmain: $(OUT_DIR)/cet_test/cet_branch
 
 $(OUT_DIR)/cet_test/cet_branch_test_two_dl: $(OUT_DIR)/cet_test/cet_branch_test_dl_helper.so $(OUT_DIR)/cet_test/nocet_branch_test_dl_helper.so cet_test/cet_branch_test_two_dl.c
 	mkdir -p $(OUT_DIR)/cet_test
-	$(CET_CC) -Wall -Werror -fcf-protection=full -g cet_test/cet_branch_test_two_dl.c -ldl -o $@
+	$(CET_CC) -Wall -Werror $(CET_CFLAGS) -g cet_test/cet_branch_test_two_dl.c -ldl -o $@
 
 $(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
 	mkdir -p $(OUT_DIR)/cet_test
 	$(CET_CC) -Wall -Werror -g $< -o $@ && \
 	objdump -D -f -s $@ > $@.asm && \
 	readelf -a -n $@ > $@.readelf
-	$(CET_CC) -Wall -Werror -fcf-protection=full -g $< -o $@2 && \
+	$(CET_CC) -Wall -Werror $(CET_CFLAGS) -g $< -o $@2 && \
 	objdump -D -f -s $@2 > $@2.asm && \
 	readelf -a -n $@2 > $@2.readelf
 
