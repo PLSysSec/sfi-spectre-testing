@@ -43,7 +43,7 @@ def get_all_benches(bencheset):
     # Get raw execution times for reference implementation
     ref_performance = {}
     for bench in all_benches:
-      if bench[1] == "1.Reference":
+      if bench[1].startswith("1."):
         ref_performance[bench[0]] = float(bench[2]) 
 
     #Normalize benchmarks
