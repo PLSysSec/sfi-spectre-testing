@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from matplotlib.ticker import FuncFormatter
+#import argparse
 
 def median(lst):
     n = len(lst)
@@ -51,7 +53,8 @@ def get_all_benches(bencheset):
       t = float(bench[-1]) / ref_performance[name]
       final_benches.append(bench[:2] + [t])
 
-    final_benches = sorted(final_benches)
+    # Remove reference implementation from graphs
+    final_benches = sorted([bench for bench in final_benches if bench[1] != "1.Reference"])
     #print("All benches:")
     #for thing in final_benches:
     #  print(thing)
@@ -67,17 +70,17 @@ def load_benches_from_files(filenames):
     all_n = sum(nset)
     # 2. Process and normalize data
     all_benches = get_all_benches(bencheset)
-    return all_n,all_benches
+    return all_n-1,all_benches # account for the removed reference
 
-def main():
+def main(filenames, use_percent=False):
 
-    filenames = sys.argv[1:]
+    #filenames = sys.argv[1:]
     all_n,all_benches = load_benches_from_files(filenames)
     
     filename_base = "/".join(filenames[0].split("/")[:-1]) + "/"
     # 3. generate graph
     fig = plt.figure()
-    make_graph(all_benches, all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt")
+    make_graph(all_benches, all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt", use_percent=use_percent)
    
 def empty_vals(n):
   vals = []
@@ -85,7 +88,7 @@ def empty_vals(n):
       vals.append([])
   return vals
 
-def make_graph(benches, n, fig, outfile, statsfile):
+def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     #for bench in benches:
     #  print(bench)
     idx = 0
@@ -132,6 +135,12 @@ def make_graph(benches, n, fig, outfile, statsfile):
     ax.set_xticks(ind+width)
     plt.xticks(rotation=90)
 
+    plt.axhline(y=1.0, color='black', linestyle='dashed')
+    plt.ylim(ymin=.8)
+
+    if use_percent:
+      ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0))) 
+
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
     ax.legend( tuple(rects), implementations )
@@ -144,6 +153,7 @@ def make_graph(benches, n, fig, outfile, statsfile):
         with open(statsfile, "a") as myfile:
           myfile.write(f"{implementations[i]} average = {result_average} {implementations[i]} median = {result_median}\n")
 
+    plt.tight_layout()
     plt.savefig(outfile, format="pdf")
 
 
@@ -173,7 +183,19 @@ def test3(filenames):
 
 
 if __name__== "__main__":
-  if len(sys.argv) == 4:
-      test3(sys.argv[1:])
-  main()
+    #parser = argparse.ArgumentParser(description='Graph Sightglass Results')
+    #parser.add_argument('--usePercent', dest='usePercent', default=False, action='store_true')
+    #args = parser.parse_args()
+
+  if sys.argv[1] == "--usePercent":
+    filenames = sys.argv[2:]
+    use_percent = True 
+  else:
+    filenames = sys.argv[1:]
+    use_percent = False
+
+  if len(filenames) == 3:
+      test3(filenames)
+
+  main(filenames, use_percent=use_percent)
 
