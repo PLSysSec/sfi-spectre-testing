@@ -54,7 +54,7 @@ def get_all_benches(bencheset):
       final_benches.append(bench[:2] + [t])
 
     # Remove reference implementation from graphs
-    final_benches = sorted([bench for bench in final_benches if bench[1].startswith("1.")])
+    final_benches = sorted([bench for bench in final_benches if not bench[1].startswith("1.")])
     #print("All benches:")
     #for thing in final_benches:
     #  print(thing)
