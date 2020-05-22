@@ -1,4 +1,4 @@
-.PHONY : build build_cettests run_tests check_asm test test_cet clean
+.PHONY : build build_cettests run_tests check_asm test test_cet clean build_transitions run_transitions
 
 .DEFAULT_GOAL := build
 
@@ -12,6 +12,8 @@ WASM_RANLIB=/opt/wasi-sdk/bin/ranlib
 WASM_CFLAGS=--sysroot /opt/wasi-sdk/share/wasi-sysroot/ -O3
 WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
+LUCET_COMMON_FLAGS=--bindings $(LUCET_SRC)/lucet-wasi/bindings.json --guard-size "4GiB" --min-reserved-size "4GiB" --max-reserved-size "4GiB"
+LUCET_TRANSITION_FLAGS=--bindings $(REPO_ROOT)/transitions_benchmark/bindings.json
 RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
@@ -34,125 +36,56 @@ CET_CC := $(shell \
 
 .PRECIOUS: %.clif
 %.clif: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--emit clif \
-		$< -o $@
+	$(LUCET) $(LUCET_COMMON_FLAGS) --emit clif $< -o $@
 
 .PRECIOUS: %.so
 %.so: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_pinned.so
 %_pinned.so: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--pinned-heap-reg \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --pinned-heap-reg $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_strawman.o
 %_spectre_strawman.o: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation strawman \
-		--emit obj \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation strawman --emit obj $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_strawman.so
 %_spectre_strawman.so: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation strawman \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation strawman $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_loadlfence.o
 %_spectre_loadlfence.o: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation loadlfence \
-		--emit obj \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation loadlfence --emit obj $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_loadlfence.so
 %_spectre_loadlfence.so: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation loadlfence \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation loadlfence $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_sfi.o
 %_spectre_sfi.o: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation sfi \
-		--emit obj \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfi --emit obj $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_sfi.so
 %_spectre_sfi.so: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation sfi \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfi $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_cet.o
 %_spectre_cet.o: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation cet \
-		--emit obj \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --emit obj $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_cet.so
 %_spectre_cet.so: %.wasm $(LUCET)
-	$(LUCET) \
-		--bindings $(LUCET_SRC)/lucet-wasi/bindings.json \
-		--guard-size "4GiB" \
-		--min-reserved-size "4GiB" \
-		--max-reserved-size "4GiB" \
-		--spectre-mitigation cet \
-		$< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_all
@@ -251,12 +184,46 @@ $(OUT_DIR)/cet_test/cet_branch_test_asm: cet_test/cet_branch_test_asm.s
 
 ###########################################################################
 
+$(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm: transitions_benchmark/wasmcode.c
+	mkdir -p $(OUT_DIR)/transitions_benchmark
+	$(WASM_CLANG) $(WASM_CFLAGS) $(WASM_LDFLAGS) -Wl,--allow-undefined $< -o $@
+
+$(OUT_DIR)/transitions_benchmark/transitions_wasm_stock.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) $< -o $@
+
+$(OUT_DIR)/transitions_benchmark/transitions_wasm_lfence.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-only-sandbox-isolation $< -o $@
+
+$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitch.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-disable-btbflush $< -o $@
+
+$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitchbtb.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi $< -o $@
+
+$(OUT_DIR)/transitions_benchmark/transitions_wasm: $(OUT_DIR)/transitions_benchmark/transitions_wasm_stock.so \
+													$(OUT_DIR)/transitions_benchmark/transitions_wasm_lfence.so \
+													$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitch.so \
+													$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitchbtb.so
+	touch $@
+
+.PHONY: $(OUT_DIR)/transitions_benchmark/release/libtransitions.so
+$(OUT_DIR)/transitions_benchmark/release/libtransitions.so:
+	cd transitions_benchmark/transitions_lib && CARGO_TARGET_DIR="$(OUT_DIR)/transitions_benchmark/" cargo build --release
+
+$(OUT_DIR)/transitions_benchmark/transitions_app: transitions_benchmark/app.c $(OUT_DIR)/transitions_benchmark/release/libtransitions.so
+	mkdir -p $(OUT_DIR)/transitions_benchmark
+	gcc transitions_benchmark/app.c -Wl,-rpath=$(OUT_DIR)/transitions_benchmark/release/ -L $(OUT_DIR)/transitions_benchmark/release/ -ltransitions -o $@
+
+###########################################################################
+
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
 build_cettests: $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_branch_test_dl $(OUT_DIR)/cet_test/cet_branch_test_dl_nocetmain $(OUT_DIR)/cet_test/cet_branch_test_two_dl $(OUT_DIR)/cet_test/cet_branch_test_asm
 
-build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_setup $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_setup build_cettests
+build_transitions: $(OUT_DIR)/transitions_benchmark/transitions_app $(OUT_DIR)/transitions_benchmark/transitions_wasm
+
+build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_setup $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_setup build_cettests build_transitions
 
 run_tests:
 	@echo "-------------------"
@@ -296,6 +263,15 @@ test_cet: build_cettests
 	cd $(OUT_DIR)/cet_test/ && ./cet_branch_test_two_dl
 	@echo "$(OUT_DIR)/cet_test/cet_branch_test_asm"
 	@$(OUT_DIR)/cet_test/cet_branch_test_asm; if [ $$? -eq 0 ]; then echo "CET assembly: invalid jump succeeded..."; else echo "CET assembly: caught invalid jump!"; fi
+
+run_transitions:
+	# Need to set frequency on all cores as core switching sets affinities to either 0 or 1..7
+	if [ -x "$(shell command -v cpupower)" ]; then \
+		sudo cpupower -c 0,1,2,3,4,5,6,7 frequency-set --min 2700MHz --max 2700MHz; \
+	else \
+		sudo cpufreq-set -c 0,1,2,3,4,5,6,7 --min 2700MHz --max 2700MHz; \
+	fi
+	cd $(OUT_DIR)/transitions_benchmark && taskset -c 0 ./transitions_app | tee $(REPO_ROOT)/../benchmarks/transitions_$(shell date --iso=seconds).txt
 
 clean:
 	rm -rf $(OUT_DIR)

@@ -1,0 +1,5 @@
+{
+    "env": {
+        "hostcall_get_value": "hostcall_get_value"
+    }
+}
