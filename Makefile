@@ -13,7 +13,7 @@ WASM_CFLAGS=--sysroot /opt/wasi-sdk/share/wasi-sysroot/ -O3
 WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
 LUCET_COMMON_FLAGS=--bindings $(LUCET_SRC)/lucet-wasi/bindings.json --guard-size "4GiB" --min-reserved-size "4GiB" --max-reserved-size "4GiB"
-LUCET_TRANSITION_FLAGS=--bindings $(REPO_ROOT)/transitions_benchmark/bindings.json
+LUCET_TRANSITION_FLAGS=--bindings $(REPO_ROOT)/transitions_benchmark/bindings.json $(LUCET_COMMON_FLAGS)
 RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
