@@ -156,6 +156,7 @@ version = "0.62.0"
 name = "cranelift-spectre"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "libc",
  "num-derive",
  "num-traits",

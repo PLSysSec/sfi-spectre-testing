@@ -92,6 +92,6 @@ pub extern "C" fn beginTest(iterations: u64) {
     start_tests_on_lib("Stock:", "./transitions_wasm_stock.so", iterations);
     start_tests_on_lib("Lfence:", "./transitions_wasm_lfence.so", iterations);
     start_tests_on_lib("CoreSwitch:", "./transitions_wasm_coreswitch.so", iterations);
-    start_tests_on_lib("CoreSwitch:", "./transitions_wasm_coreswitchbtb.so", iterations);
+    start_tests_on_lib("CoreSwitchBTB:", "./transitions_wasm_coreswitchbtb.so", iterations);
     println!("Successful");
 }
