@@ -140,7 +140,7 @@ def run(result_path, n, output_path):
     lock_num = int(get_lock_num(result_path))
     all_times = {}
     for idx in range(n):
-        name,times = get_merged_summary(result_path, lock_num - n + idx)
+        name,times = get_merged_summary(result_path, lock_num - n + idx + 1)
         print(name, times)
         all_times[name] = times
    
