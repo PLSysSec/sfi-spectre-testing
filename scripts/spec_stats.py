@@ -67,7 +67,7 @@ def make_graph(all_times, output_path):
     num_mitigations = len(all_times)
     num_benches = len(next(iter(all_times.values()))) # get any element
     mitigations = list(all_times.keys())
-    width = (1.0 / ( (num_mitigations*num_benches) + 1))        # the width of the bars
+    width = (1.0 / ( (num_mitigations) + 1))        # the width of the bars
     
     ax = fig.add_subplot(111)
     
