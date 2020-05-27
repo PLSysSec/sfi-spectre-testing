@@ -23,23 +23,25 @@ def load_data(input_path):
         lines = data.split('\n')
     return lines
 
-def get_lock_num(result_path):
-    path = result_path + "/lock.CPU2006"
+def get_lock_num(result_path, spec2017=False):
+    if spec2017:
+        path = result_path + "/lock.CPU2017"
+    else:
+        path = result_path + "/lock.CPU2006"
     with open(path, 'r') as f:
         data = f.read().strip()
-    return data
+    return int(data)
 
 #spec.cpu2006.results.462_libquantum.base.000.reported_time: 502.749075
 # spec.cpu2006.ext: wasm_lucet
-def summarise(input_path):
+def summarise(input_path, spec2017=False):
     times = {}
     mitigation_name = ""
-    #try:
     lines = load_data(input_path)
-    #except:
-    #    return ("",{})
+    results_label = ("spec.cpu2006.results" if not spec2017 else "spec.cpu2017.results")
+    ext_label = ("spec.cpu2006.ext" if not spec2017 else "spec.cpu2017.label")
     for line in lines:
-        if "spec.cpu2006.results" in line:
+        if results_label in line:
             if ".valid" in line:
                 name = line.split('.')[3]
                 result_code = line.split()[-1]
@@ -48,7 +50,7 @@ def summarise(input_path):
                 name = line.split('.')[3]
                 success_code = line.split()[-1]
                 times[name] = float(success_code)
-        if "spec.cpu2006.ext" in line:
+        if ext_label in line:
                 mitigation_name = line.split()[1]
 
     return (mitigation_name,times)
@@ -133,6 +135,26 @@ def get_merged_summary(result_path, n):
     #print(name1, name2)
     return name1,times
 
+
+def get_merged_summary_spec2017(result_path, n):
+    intspeed_input_path = f"{result_path}/CPU2017.{str(n).zfill(3)}.intspeed.refspeed.rsf"
+    fpspeed_input_path = f"{result_path}/CPU2017.{str(n).zfill(3)}.fpspeed.refspeed.rsf"
+    fprate_input_path = f"{result_path}/CPU2017.{str(n).zfill(3)}.fprate.refrate.rsf"
+    name1,intspeed_times = summarise(intspeed_input_path, spec2017=True)
+    name2,fpspeed_times = summarise(fpspeed_input_path, spec2017=True)
+    name3,fprate_times = summarise(fprate_input_path, spec2017=True)
+    times = {}
+    times.update(intspeed_times)
+    times.update(fpspeed_times)
+    times.update(fprate_times)
+    print(name1,name2,name3)
+    assert(name1 == name2)
+    assert(name2 == name3)
+    return name1,times
+
+
+
+
 def normalize_times(times):
     normalized_times = defaultdict(dict)
     base_times = times["wasm_lucet"]
@@ -145,7 +167,7 @@ def normalize_times(times):
 
 # "spec.cpu2006.results.464_h264ref.base.000.valid:"
 def run(result_path, n, output_path):
-    lock_num = int(get_lock_num(result_path))
+    lock_num = get_lock_num(result_path)
     all_times = {}
     for idx in range(n):
         name,times = get_merged_summary(result_path, lock_num - n + idx + 1)
@@ -158,19 +180,34 @@ def run(result_path, n, output_path):
     make_graph(normalized_times, output_path)
   
 
-def run_w_filter(result_path, bench_filter, n, use_percent):
-    lock_num = int(get_lock_num(result_path))
+def run_w_filter(result_path, bench_filter, n, use_percent, spec2017=False):
     all_times = {}
-    for idx in range(n):
-        name,times = get_merged_summary(result_path, lock_num - n + idx + 1)
-        print(name, times)
-        all_times[name] = times
+    lock_num = get_lock_num(result_path, spec2017=spec2017)
+    if spec2017:
+        print("This is Spec2017!")
+        print(f"Lock num = {lock_num}")
+        for idx in range(n):
+            name,times = get_merged_summary_spec2017(result_path, lock_num - n + idx + 1)
+            print(name, times)
+            all_times[name] = times
+        print("SPEC2017 Times: ", all_times)
+        normalized_times = normalize_times(all_times)
+        print("Spec2017 Times: ", normalized_times)
+        # Do graphing here
+        for partitioned_times, output_path in bench_filter.partition_benches(normalized_times):
+            make_graph(partitioned_times, output_path, use_percent=use_percent)
+        return
+    else:
+        for idx in range(n):
+            name,times = get_merged_summary(result_path, lock_num - n + idx + 1)
+            print(name, times)
+            all_times[name] = times
 
-    normalized_times = normalize_times(all_times)
+        normalized_times = normalize_times(all_times)
 
-    #{mitigation name -> {}}      --- here is where we cut
-    for partitioned_times, output_path in bench_filter.partition_benches(normalized_times):
-        make_graph(partitioned_times, output_path,  use_percent=use_percent)
+        #{mitigation name -> {}}      --- here is where we cut
+        for partitioned_times, output_path in bench_filter.partition_benches(normalized_times):
+            make_graph(partitioned_times, output_path,  use_percent=use_percent)
 
 
 class BenchAlias(object):
@@ -229,10 +266,11 @@ def main():
     parser = argparse.ArgumentParser(description='Graph Spec Results')
     parser.add_argument('-i', dest='input_path', help='input directory (should be a spec2017 results directory)')
     parser.add_argument('--usePercent', dest='usePercent', default=False, action='store_true')
+    parser.add_argument('--spec2017', dest='spec2017', default=False, action='store_true')
     parser.add_argument("--filter", dest="filter", type=BenchFilter)
     parser.add_argument("-n", dest="n", type=int)
     args = parser.parse_args()
-    run_w_filter(args.input_path, args.filter, args.n, use_percent=args.usePercent)
+    run_w_filter(args.input_path, args.filter, args.n, use_percent=args.usePercent, spec2017=args.spec2017)
 
 
 if __name__ == '__main__':
