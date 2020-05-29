@@ -167,17 +167,14 @@ def run(result_path, n, output_path):
     make_graph(normalized_times, output_path)
   
 
-def run_w_filter(result_path, bench_filter, n, use_percent, spec2017=False):
+def run_w_filter(result_path, bench_filter, n, use_percent, spec2017=False, extra_spec2017_path=None, extra_spec2017_n=None):
     all_times = {}
     lock_num = get_lock_num(result_path, spec2017=spec2017)
     if spec2017:
-        print("This is Spec2017!")
-        print(f"Lock num = {lock_num}")
         for idx in range(n):
             name,times = get_merged_summary_spec2017(result_path, lock_num - n + idx + 1)
             print(name, times)
             all_times[name] = times
-        print("SPEC2017 Times: ", all_times)
         normalized_times = normalize_times(all_times)
         print("Normalized Spec2017 Times: ")
         for name,times in normalized_times.items():
@@ -194,6 +191,29 @@ def run_w_filter(result_path, bench_filter, n, use_percent, spec2017=False):
 
         normalized_times = normalize_times(all_times)
 
+        # If we're using a merged run
+        if extra_spec2017_path != None:
+            assert(extra_spec2017_n != None)
+            all_times_extra = {}
+            loc_num_extra = lock_num = get_lock_num(extra_spec2017_path, spec2017=True)
+            for idx in range(extra_spec2017_n):
+                name,times = get_merged_summary_spec2017(extra_spec2017_path, lock_num - extra_spec2017_n + idx + 1)
+                all_times_extra[name] = times
+            normalized_times_extra = normalize_times(all_times_extra)
+            #normalized_times.update(normalized_times_extra)
+            for name,extra_times in normalized_times_extra.items():
+                print(name, extra_times, normalized_times[name])
+                if name in normalized_times:
+                    times = normalized_times[name]
+                    times.update(extra_times)
+                    normalized_times[name] = times
+                else:
+                    normalized_times[name] = extra_times
+
+
+        print("Normalized times:")
+        for name, times in normalized_times.items():
+            print(name, times)
         #{mitigation name -> {}}      --- here is where we cut
         for partitioned_times, output_path in bench_filter.partition_benches(normalized_times):
             make_graph(partitioned_times, output_path,  use_percent=use_percent)
@@ -253,13 +273,15 @@ class BenchFilter(object):
 
 def main():
     parser = argparse.ArgumentParser(description='Graph Spec Results')
-    parser.add_argument('-i', dest='input_path', help='input directory (should be a spec2017 results directory)')
+    parser.add_argument('-i', dest='input_path', help='input directory (should be a spec results directory)')
+    parser.add_argument('--extraSpec2017Path', dest='extra_spec2017_path', default=None, help='extra input directory (should be a spec2017 results directory)')
+    parser.add_argument("--extraSpec2017n", dest="extra_spec2017_n", default=None, type=int)
     parser.add_argument('--usePercent', dest='usePercent', default=False, action='store_true')
     parser.add_argument('--spec2017', dest='spec2017', default=False, action='store_true')
     parser.add_argument("--filter", dest="filter", type=BenchFilter)
     parser.add_argument("-n", dest="n", type=int)
     args = parser.parse_args()
-    run_w_filter(args.input_path, args.filter, args.n, use_percent=args.usePercent, spec2017=args.spec2017)
+    run_w_filter(args.input_path, args.filter, args.n, use_percent=args.usePercent, spec2017=args.spec2017, extra_spec2017_path=args.extra_spec2017_path, extra_spec2017_n=args.extra_spec2017_n)
 
 
 if __name__ == '__main__':
