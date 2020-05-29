@@ -57,7 +57,7 @@ def summarise(input_path, spec2017=False):
 
 def all_times_to_vals(all_times):
     vals = []
-    print(all_times)
+    #print(all_times)
     for d in all_times.values():
         l = sorted(list(d.items()),key=lambda x: x[0])
         ll = [v for (k,v) in l]
@@ -66,6 +66,9 @@ def all_times_to_vals(all_times):
 
 
 def make_graph(all_times, output_path, use_percent=False):
+    print("Making graph! all_times = " )
+    for name, times in all_times.items():
+        print(name, times)
     fig = plt.figure()
     num_mitigations = len(all_times)
     num_benches = len(next(iter(all_times.values()))) # get any element
@@ -77,8 +80,8 @@ def make_graph(all_times, output_path, use_percent=False):
     vals = all_times_to_vals(all_times)
 
     ind = np.arange(num_benches)
-    labels = tuple(list(next(iter(all_times.values())).keys()))
-
+    labels = tuple(sorted(list(next(iter(all_times.values())).keys())))
+    print(labels)
     print(vals)
 
     rects = []
@@ -101,27 +104,15 @@ def make_graph(all_times, output_path, use_percent=False):
     ax.legend( tuple(rects), all_times.keys() )
     fig.subplots_adjust(bottom=0.25)
 
-
     for i in range(num_mitigations):
         result_average = sum(vals[i]) / num_benches
         result_median = median(vals[i])
-        #print(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}")
         with open(output_path + ".stats", "a") as myfile:
             myfile.write(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}\n")
 
     plt.tight_layout()
     plt.savefig(output_path + ".graph", format="pdf")
-    '''
-    for i in range(num_mitigations):
-        result_average = sum(vals[i]) / N 
-        result_median = median(vals[i])
-        with open(statsfile, "a") as myfile:
-          myfile.write(f"{implementations[i]} average = {result_average} {implementations[i]} median = {result_median}\n")
 
-    plt.savefig(outfile, format="pdf")
-    '''
-
-    #plt.show()
 
 def get_merged_summary(result_path, n):
     int_input_path = f"{result_path}/CINT2006.{str(n).zfill(3)}.ref.rsf"
@@ -147,13 +138,9 @@ def get_merged_summary_spec2017(result_path, n):
     times.update(intspeed_times)
     times.update(fpspeed_times)
     times.update(fprate_times)
-    print(name1,name2,name3)
     assert(name1 == name2)
     assert(name2 == name3)
     return name1,times
-
-
-
 
 def normalize_times(times):
     normalized_times = defaultdict(dict)
@@ -192,7 +179,9 @@ def run_w_filter(result_path, bench_filter, n, use_percent, spec2017=False):
             all_times[name] = times
         print("SPEC2017 Times: ", all_times)
         normalized_times = normalize_times(all_times)
-        print("Spec2017 Times: ", normalized_times)
+        print("Normalized Spec2017 Times: ")
+        for name,times in normalized_times.items():
+            print(name, times)
         # Do graphing here
         for partitioned_times, output_path in bench_filter.partition_benches(normalized_times):
             make_graph(partitioned_times, output_path, use_percent=use_percent)
