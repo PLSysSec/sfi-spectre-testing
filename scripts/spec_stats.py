@@ -107,7 +107,7 @@ def make_graph(all_times, output_path, use_percent=False):
     for i in range(num_mitigations):
         result_average = sum(vals[i]) / num_benches
         result_median = median(vals[i])
-        with open(output_path + ".stats", "a+") as myfile:
+        with open(output_path + ".stats", "w+") as myfile:
             myfile.write(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}\n")
 
     plt.tight_layout()
