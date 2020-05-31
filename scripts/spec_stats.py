@@ -115,7 +115,7 @@ def make_graph(all_times, output_path, use_percent=False):
             myfile.write(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}\n")
 
     plt.tight_layout()
-    plt.savefig(output_path + ".graph", format="pdf")
+    plt.savefig(output_path + ".pdf", format="pdf")
 
 
 def get_merged_summary(result_path, n):
