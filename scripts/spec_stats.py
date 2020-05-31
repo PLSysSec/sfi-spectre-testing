@@ -104,10 +104,14 @@ def make_graph(all_times, output_path, use_percent=False):
     ax.legend( tuple(rects), all_times.keys() )
     fig.subplots_adjust(bottom=0.25)
 
+    #clear any old data
+    with open(output_path + ".stats", "w+") as myfile:
+        pass
+
     for i in range(num_mitigations):
         result_average = sum(vals[i]) / num_benches
         result_median = median(vals[i])
-        with open(output_path + ".stats", "w+") as myfile:
+        with open(output_path + ".stats", "a+") as myfile:
             myfile.write(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}\n")
 
     plt.tight_layout()
