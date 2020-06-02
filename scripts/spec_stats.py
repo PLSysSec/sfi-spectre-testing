@@ -17,6 +17,15 @@ def median(lst):
     s = sorted(lst)
     return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
 
+def geomean(lst):
+    # Geomean is conceptually:
+    #   product of all terms in the list, take nth root
+    # This can overflow, so it is better to compute it as:
+    #   log all terms in the list, arithmetic mean, un-log
+    # which is equivalent
+    lst = np.array(lst)
+    return np.exp(np.mean(np.log(1.0*lst)))  # 1.0* and np.log implicitly lift to lists elementwise
+
 def load_data(input_path):
     with open(input_path, 'r') as f:
         data = f.read()
@@ -109,10 +118,10 @@ def make_graph(all_times, output_path, use_percent=False):
         pass
 
     for i in range(num_mitigations):
-        result_average = sum(vals[i]) / num_benches
+        result_geomean = geomean(vals[i])
         result_median = median(vals[i])
         with open(output_path + ".stats", "a+") as myfile:
-            myfile.write(f"{mitigations[i]} average = {result_average} {mitigations[i]} median = {result_median}\n")
+            myfile.write(f"{mitigations[i]} geomean = {result_geomean} {mitigations[i]} median = {result_median}\n")
 
     plt.tight_layout()
     plt.savefig(output_path + ".pdf", format="pdf")
