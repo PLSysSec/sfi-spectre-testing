@@ -88,8 +88,18 @@ CET_CC := $(shell \
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $< -o $@ && \
 	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_blade.so
+%_spectre_blade.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation blade --pinned-heap-reg $< -o $@ && \
+	objdump -d $@ > $@.asm
+
+.PRECIOUS: %_spectre_phttobtb.so
+%_spectre_phttobtb.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation phttobtb --pinned-heap-reg $< -o $@ && \
+	objdump -d $@ > $@.asm
+
 .PRECIOUS: %_all
-%_all: $(LUCET) %.clif %.so %_pinned.so %_spectre_strawman.o %_spectre_strawman.so %_spectre_loadlfence.o %_spectre_loadlfence.so %_spectre_sfi.o %_spectre_sfi.so %_spectre_cet.o %_spectre_cet.so
+%_all: $(LUCET) %.clif %.so %_pinned.so %_spectre_strawman.o %_spectre_strawman.so %_spectre_loadlfence.o %_spectre_loadlfence.so %_spectre_sfi.o %_spectre_sfi.so %_spectre_cet.o %_spectre_cet.so %_spectre_blade.so %_spectre_phttobtb.so
 	touch $@
 
 ###########################################################################
@@ -225,6 +235,11 @@ build_transitions: $(OUT_DIR)/transitions_benchmark/transitions_app $(OUT_DIR)/t
 
 build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_setup $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_setup build_cettests build_transitions
 
+test_phtbtb: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_phttobtb.so $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_phttobtb.so
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+
 run_tests:
 	@echo "-------------------"
 	@echo "Testing"
@@ -235,6 +250,8 @@ run_tests:
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_strawman.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_loadlfence.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_blade.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_phttobtb.so
 	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
 	@echo "-------------------"
 	@echo "PNG Test"
@@ -248,6 +265,10 @@ run_tests:
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_loadlfence.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_blade.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 	-rm $(REPO_ROOT)/libpng/pngout.png

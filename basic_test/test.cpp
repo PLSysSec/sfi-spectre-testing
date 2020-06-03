@@ -65,6 +65,42 @@ extern "C"
     }
 
     __attribute__((noinline))
+    int spec_switch2(int val, int val2) {
+        switch (val)
+        {
+            case 1:
+                printf("Int:%d\n", val2);
+                return 20;
+            case 2:
+                puts("Case2\n");
+                return 27;
+        }
+
+        return 33;
+    }
+
+    __attribute__((noinline))
+    int spec_if2(int val, int val2) {
+        if (val == 1) {
+            printf("Int:%d\n", val2);
+            return 20;
+        } else {
+            puts("Case2\n");
+            return 27;
+        }
+    }
+
+    int spec_float_compare(float x, int val2) {
+        if (x > 5.5) {
+            printf("Int:%d\n", val2);
+            return 20;
+        } else {
+            puts("Case2\n");
+            return 27;
+        }
+    }
+
+    __attribute__((noinline))
     int spec_call_ptr(int(*fn)())
     {
         int ret = 1 + fn();
@@ -151,4 +187,18 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    if (spec_if2(1, 100) != 20) {
+        printf("Test3 failed\n");
+        return -1;
+    }
+    if (spec_if2(2, 100) != 27) {
+        printf("Test4 failed\n");
+        return -1;
+    }
+    if (spec_if2(3, 100) != 27) {
+        printf("Test5 failed\n");
+        return -1;
+    }
+
+    return 0;
 }
