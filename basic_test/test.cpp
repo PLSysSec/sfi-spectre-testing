@@ -79,6 +79,25 @@ extern "C"
         return 33;
     }
 
+        __attribute__((noinline))
+    int spec_switch_wierd(int val) {
+        switch (val)
+        {
+        case 23:
+            printf("Case 1\n");
+        case 41:
+            printf("Case 2\n");
+            break;
+        case 49:
+            printf("Case 3\n");
+            return val * 6  - 7;
+        default:
+            return val;
+        }
+
+        return 0;
+    }
+
     __attribute__((noinline))
     int spec_if2(int val, int val2) {
         if (val == 1) {
