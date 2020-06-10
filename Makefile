@@ -98,8 +98,13 @@ CET_CC := $(shell \
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation phttobtb --pinned-heap-reg $< -o $@ && \
 	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_cfi.so
+%_spectre_cfi.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation cfi --pinned-heap-reg $< -o $@ && \
+	objdump -d $@ > $@.asm
+
 .PRECIOUS: %_all
-%_all: $(LUCET) %.clif %.so %_pinned.so %_spectre_strawman.o %_spectre_strawman.so %_spectre_loadlfence.o %_spectre_loadlfence.so %_spectre_sfi.o %_spectre_sfi.so %_spectre_cet.o %_spectre_cet.so %_spectre_blade.so %_spectre_phttobtb.so
+%_all: $(LUCET) %.clif %.so %_pinned.so %_spectre_strawman.o %_spectre_strawman.so %_spectre_loadlfence.o %_spectre_loadlfence.so %_spectre_sfi.o %_spectre_sfi.so %_spectre_cet.o %_spectre_cet.so %_spectre_blade.so %_spectre_phttobtb.so %_spectre_cfi.so
 	touch $@
 
 ###########################################################################
@@ -239,6 +244,11 @@ test_phtbtb: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_phttobtb.so
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+
+test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi.so # $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_spectre_cfi.so
+	gdb --args $(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_cfi.so
+	# -rm $(REPO_ROOT)/libpng/pngout.png
+	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 
 run_tests:
 	@echo "-------------------"
