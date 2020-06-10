@@ -14,7 +14,8 @@ WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
 LUCET_COMMON_FLAGS=--bindings $(LUCET_SRC)/lucet-wasi/bindings.json --guard-size "4GiB" --min-reserved-size "4GiB" --max-reserved-size "4GiB"
 LUCET_TRANSITION_FLAGS=--bindings $(REPO_ROOT)/transitions_benchmark/bindings.json $(LUCET_COMMON_FLAGS)
-RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/ --spectre-mitigation-aslr
+RUN_WASM_SO_NOASLR=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
+RUN_WASM_SO=$(RUN_WASM_SO_NOASLR) --spectre-mitigation-aslr
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
 ifdef REALLY_USE_CET
@@ -246,7 +247,7 @@ test_phtbtb: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 
 test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi.so # $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_spectre_cfi.so
-	gdb --args $(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_cfi.so
+	gdb --args $(RUN_WASM_SO_NOASLR) $(OUT_DIR)/basic_test/test_spectre_cfi.so
 	# -rm $(REPO_ROOT)/libpng/pngout.png
 	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 
