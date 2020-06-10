@@ -246,10 +246,10 @@ test_phtbtb: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 
-test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi.so # $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_spectre_cfi.so
-	gdb --args $(RUN_WASM_SO_NOASLR) $(OUT_DIR)/basic_test/test_spectre_cfi.so
-	# -rm $(REPO_ROOT)/libpng/pngout.png
-	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
+test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi.so $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_spectre_cfi.so
+	$(RUN_WASM_SO_NOASLR) $(OUT_DIR)/basic_test/test_spectre_cfi.so
+	-rm $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 
 run_tests:
 	@echo "-------------------"
