@@ -46,6 +46,15 @@ extern "C"
     }
 
     __attribute__((noinline))
+    void spec_printDoWhile(int val)
+    {
+        do {
+            printf("Val: %d\n", val);
+            val--;
+        } while (val > 0);
+    }
+
+    __attribute__((noinline))
     int spec_switch(int val) {
         switch (val)
         {
