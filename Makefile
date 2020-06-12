@@ -16,6 +16,7 @@ LUCET_COMMON_FLAGS=--bindings $(LUCET_SRC)/lucet-wasi/bindings.json --guard-size
 LUCET_TRANSITION_FLAGS=--bindings $(REPO_ROOT)/transitions_benchmark/bindings.json $(LUCET_COMMON_FLAGS)
 RUN_WASM_SO_NOASLR=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 RUN_WASM_SO=$(RUN_WASM_SO_NOASLR) --spectre-mitigation-aslr
+WABT_BINS_FOLDER=$(REPO_ROOT)/../../wabt/bin
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
 ifdef REALLY_USE_CET
@@ -255,8 +256,8 @@ test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi
 LOOPFLAGS=-funroll-loops -mllvm -unroll-threshold=1 -unroll-partial-threshold=4 -mllvm -unroll-count=4
 test_unrolling:
 	$(WASM_CLANG)++ $(WASM_CFLAGS) $(LOOPFLAGS) $(WASM_LDFLAGS) basic_test/test.cpp -o $(OUT_DIR)/basic_test/test.wasm
-	$(REPO_ROOT)/../../wabt/bin/wasm2wat $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wat
-	$(REPO_ROOT)/../../wabt/bin/wasm-decompile $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wasm.decompile
+	$(WABT_BINS_FOLDER)/wasm2wat $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wat
+	$(WABT_BINS_FOLDER)/wasm-decompile $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wasm.decompile
 
 run_tests:
 	@echo "-------------------"
