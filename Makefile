@@ -251,9 +251,10 @@ test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 
-#  -funroll-loops -mllvm -unroll-threshold=1000
+#  -funroll-loops -mllvm -unroll-threshold=1000  -mllvm -unroll-max-percent-threshold-boost=10000
+LOOPFLAGS=-funroll-loops -mllvm -unroll-threshold=1 -unroll-partial-threshold=4 -mllvm -unroll-count=4
 test_unrolling:
-	$(WASM_CLANG)++ $(WASM_CFLAGS) -funroll-loops -mllvm -unroll-partial-threshold=10000 $(WASM_LDFLAGS) basic_test/test.cpp -o $(OUT_DIR)/basic_test/test.wasm
+	$(WASM_CLANG)++ $(WASM_CFLAGS) $(LOOPFLAGS) $(WASM_LDFLAGS) basic_test/test.cpp -o $(OUT_DIR)/basic_test/test.wasm
 	$(REPO_ROOT)/../../wabt/bin/wasm2wat $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wat
 	$(REPO_ROOT)/../../wabt/bin/wasm-decompile $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wasm.decompile
 
