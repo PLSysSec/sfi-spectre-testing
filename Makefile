@@ -252,12 +252,15 @@ test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi
 	-rm $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
 
+LOOPFLAGS=-funroll-loops -mllvm --unroll-runtime -mllvm --unroll-runtime-epilog
 #  -funroll-loops -mllvm -unroll-threshold=1000  -mllvm -unroll-max-percent-threshold-boost=10000
-LOOPFLAGS=-funroll-loops -mllvm -unroll-threshold=1 -unroll-partial-threshold=4 -mllvm -unroll-count=4
+#-mllvm -unroll-threshold=1 -mllvm -unroll-count=8
 test_unrolling:
 	$(WASM_CLANG)++ $(WASM_CFLAGS) $(LOOPFLAGS) $(WASM_LDFLAGS) basic_test/test.cpp -o $(OUT_DIR)/basic_test/test.wasm
 	$(WABT_BINS_FOLDER)/wasm2wat $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wat
 	$(WABT_BINS_FOLDER)/wasm-decompile $(OUT_DIR)/basic_test/test.wasm > $(OUT_DIR)/basic_test/test.wasm.decompile
+	$(WABT_BINS_FOLDER)/wabt/bin/wasm2wat $(REPO_ROOT)/../lucet-spectre/benchmarks/shootout/build/lucet_unroll/module.wasm > $(OUT_DIR)/sightglass/module_unroll.wat
+	$(WABT_BINS_FOLDER)/wabt/bin/wasm-decompile $(REPO_ROOT)/../lucet-spectre/benchmarks/shootout/build/lucet_unroll/module.wasm > $(OUT_DIR)/sightglass/module_unroll.wasm.decompile
 
 run_tests:
 	@echo "-------------------"
