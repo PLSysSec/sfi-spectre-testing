@@ -21,6 +21,20 @@
                 "${workspaceFolder}/out/test_spectre_so.asm"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "spec_stats.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/spec_stats.py",
+            "args": [
+                "-i", "${workspaceFolder}/../benchmarks/spec_curr",
+                "--usePercent",
+                "--filter",
+                "${workspaceFolder}/../benchmarks/spec_curr/spec_results=wasm_lucet:lucet,wasm_lucet_unroll:lucet_unroll,wasm_phttobtb:phttobtb,wasm_phttobtb_unroll:phttobtb_unroll,wasm_cfi:cfi,wasm_cfi_unroll:cfi_unroll",
+                "-n", "6"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }

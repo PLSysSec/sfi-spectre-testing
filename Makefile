@@ -10,12 +10,13 @@ WASM_CLANG=/opt/wasi-sdk/bin/clang
 WASM_AR=/opt/wasi-sdk/bin/ar
 WASM_RANLIB=/opt/wasi-sdk/bin/ranlib
 WASM_CFLAGS=--sysroot /opt/wasi-sdk/share/wasi-sysroot/ -O3
+WASM_CFLAGS_UNROLL_LOOPS=$(WASM_CFLAGS) -funroll-loops -mllvm --unroll-runtime -mllvm --unroll-runtime-epilog
 WASM_LDFLAGS=-Wl,--export-all
 WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
 LUCET_COMMON_FLAGS=--bindings $(LUCET_SRC)/lucet-wasi/bindings.json --guard-size "4GiB" --min-reserved-size "4GiB" --max-reserved-size "4GiB"
 LUCET_TRANSITION_FLAGS=--bindings $(REPO_ROOT)/transitions_benchmark/bindings.json $(LUCET_COMMON_FLAGS)
-RUN_WASM_SO_NOASLR=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
-RUN_WASM_SO=$(RUN_WASM_SO_NOASLR) --spectre-mitigation-aslr
+RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
+RUN_WASM_SO_ASLR=$(RUN_WASM_SO) --spectre-mitigation-aslr
 WABT_BINS_FOLDER=$(REPO_ROOT)/../../wabt/bin
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
@@ -50,19 +51,9 @@ CET_CC := $(shell \
 	$(LUCET) $(LUCET_COMMON_FLAGS) --pinned-heap-reg $< -o $@ && \
 	objdump -d $@ > $@.asm
 
-.PRECIOUS: %_spectre_strawman.o
-%_spectre_strawman.o: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation strawman --emit obj $< -o $@ && \
-	objdump -d $@ > $@.asm
-
 .PRECIOUS: %_spectre_strawman.so
 %_spectre_strawman.so: %.wasm $(LUCET)
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation strawman $< -o $@ && \
-	objdump -d $@ > $@.asm
-
-.PRECIOUS: %_spectre_loadlfence.o
-%_spectre_loadlfence.o: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation loadlfence --emit obj $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_loadlfence.so
@@ -70,24 +61,51 @@ CET_CC := $(shell \
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation loadlfence $< -o $@ && \
 	objdump -d $@ > $@.asm
 
-.PRECIOUS: %_spectre_sfi.o
-%_spectre_sfi.o: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfi --emit obj $< -o $@ && \
+.PRECIOUS: %_spectre_sfi_sbxbreakout.so
+%_spectre_sfi_sbxbreakout.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-breakout $< -o $@ && \
+	objdump -d $@ > $@.asm
+
+.PRECIOUS: %_spectre_cet_sbxbreakout.so
+%_spectre_cet_sbxbreakout.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --spectre-stop-sbx-breakout $< -o $@ && \
+	objdump -d $@ > $@.asm
+
+# Sfi - sbx & host poisoning uses PHT_TO_BTB and should use loop unrolled modules
+# Cet - sbx poisoning should uses INTERLOCK and use loop unrolled modules
+.PRECIOUS: %_spectre_sfi_sbxpoisoning.so
+%_spectre_sfi_sbxpoisoning.so: %_unroll.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-poisoning $< -o $@ && \
+	objdump -d $@ > $@.asm
+
+.PRECIOUS: %_spectre_cet_sbxpoisoning.so
+%_spectre_cet_sbxpoisoning.so: %_unroll.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --spectre-stop-sbx-poisoning $< -o $@ && \
+	objdump -d $@ > $@.asm
+
+.PRECIOUS: %_spectre_sfi_hostpoisoning.so
+%_spectre_sfi_hostpoisoning.so: %_unroll.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfi --spectre-stop-host-poisoning $< -o $@ && \
+	objdump -d $@ > $@.asm
+
+.PRECIOUS: %_spectre_cet_hostpoisoning.so
+%_spectre_cet_hostpoisoning.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --spectre-stop-host-poisoning $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_sfi.so
-%_spectre_sfi.so: %.wasm $(LUCET)
+%_spectre_sfi.so: %_unroll.wasm $(LUCET)
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfi $< -o $@ && \
 	objdump -d $@ > $@.asm
 
-.PRECIOUS: %_spectre_cet.o
-%_spectre_cet.o: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --emit obj $< -o $@ && \
+.PRECIOUS: %_spectre_cet.so
+%_spectre_cet.so: %_unroll.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $< -o $@ && \
 	objdump -d $@ > $@.asm
 
-.PRECIOUS: %_spectre_cet.so
-%_spectre_cet.so: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $< -o $@ && \
+.PRECIOUS: %_spectre_sfiaslr.so
+%_spectre_sfiaslr.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfiaslr $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_blade.so
@@ -100,22 +118,39 @@ CET_CC := $(shell \
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation phttobtb --pinned-heap-reg $< -o $@ && \
 	objdump -d $@ > $@.asm
 
-.PRECIOUS: %_spectre_cfi.so
-%_spectre_cfi.so: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation cfi --pinned-heap-reg $< -o $@ && \
+.PRECIOUS: %_spectre_interlock.so
+%_spectre_interlock.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation interlock --pinned-heap-reg $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_all
-%_all: $(LUCET) %.clif %.so %_pinned.so %_spectre_strawman.o %_spectre_strawman.so %_spectre_loadlfence.o %_spectre_loadlfence.so %_spectre_sfi.o %_spectre_sfi.so %_spectre_cet.o %_spectre_cet.so %_spectre_blade.so %_spectre_phttobtb.so %_spectre_cfi.so
+%_all: $(LUCET) %.clif \
+				%.so \
+				%_pinned.so \
+				%_spectre_strawman.so \
+				%_spectre_loadlfence.so \
+				%_spectre_sfi_sbxbreakout.so \
+				%_spectre_cet_sbxbreakout.so \
+				%_spectre_sfi_sbxpoisoning.so \
+				%_spectre_cet_sbxpoisoning.so \
+				%_spectre_sfi_hostpoisoning.so \
+				%_spectre_cet_hostpoisoning.so \
+				%_spectre_sfi.so \
+				%_spectre_cet.so \
+				%_spectre_sfiaslr.so \
+				%_spectre_blade.so \
+				%_spectre_phttobtb.so \
+				%_spectre_interlock.so
 	touch $@
 
 ###########################################################################
 
-$(OUT_DIR)/basic_test/test.wasm: basic_test/test.cpp
-	mkdir -p $(OUT_DIR)/basic_test && \
-	$(WASM_CLANG)++ $(WASM_CFLAGS) $(WASM_LDFLAGS) $< -o $@
+$(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_unroll.wasm: basic_test/test.cpp
+	mkdir -p $(OUT_DIR)/basic_test
+	$(WASM_CLANG)++ $(WASM_CFLAGS) $(WASM_LDFLAGS) $< -o $(OUT_DIR)/basic_test/test.wasm
+	$(WASM_CLANG)++ $(WASM_CFLAGS_UNROLL_LOOPS) $(WASM_LDFLAGS) $< -o $(OUT_DIR)/basic_test/test_unroll.wasm
 
-$(OUT_DIR)/basic_test/test_setup: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_all
+$(OUT_DIR)/basic_test/test_setup: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_all
 
 ###########################################################################
 
@@ -130,12 +165,13 @@ $(OUT_DIR)/libpng/Makefile: $(OUT_DIR)/zlib/libz.a libpng/CMakeLists.txt
 	mkdir -p $(OUT_DIR)/libpng
 	cd $(OUT_DIR)/libpng && cmake -DCMAKE_C_COMPILER=$(WASM_CLANG) -DCMAKE_C_FLAGS='$(WASM_CFLAGS) -DPNG_NO_SETJMP=1' -DCMAKE_EXE_LINKER_FLAGS='$(WASM_LDFLAGS)' -DM_LIBRARY=$(WASM_LIBM) -DZLIB_INCLUDE_DIR=$(REPO_ROOT)/zlib -DZLIB_LIBRARY=$(OUT_DIR)/zlib/libz.a -DPNG_SHARED=0 $(REPO_ROOT)/libpng
 
-$(OUT_DIR)/libpng/pngtest.wasm: $(OUT_DIR)/libpng/Makefile
+$(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_unroll.wasm: $(OUT_DIR)/libpng/Makefile
 	$(MAKE) -C $(OUT_DIR)/libpng
 	# Have to build pngtest manually
 	$(WASM_CLANG) $(WASM_CFLAGS) $(WASM_LDFLAGS) libpng/pngtest.c -I $(OUT_DIR)/libpng/ -I zlib/ -o $(OUT_DIR)/libpng/pngtest.wasm -L $(OUT_DIR)/libpng -L $(OUT_DIR)/zlib -lpng -lz
+	$(WASM_CLANG) $(WASM_CFLAGS_UNROLL_LOOPS) $(WASM_LDFLAGS) libpng/pngtest.c -I $(OUT_DIR)/libpng/ -I zlib/ -o $(OUT_DIR)/libpng/pngtest_unroll.wasm -L $(OUT_DIR)/libpng -L $(OUT_DIR)/zlib -lpng -lz
 
-$(OUT_DIR)/libpng/pngtest_setup: $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_all
+$(OUT_DIR)/libpng/pngtest_setup: $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_unroll.wasm $(OUT_DIR)/libpng/pngtest_all
 
 ###########################################################################
 
@@ -209,18 +245,18 @@ $(OUT_DIR)/transitions_benchmark/transitions_wasm_stock.so: $(OUT_DIR)/transitio
 	$(LUCET) $(LUCET_TRANSITION_FLAGS) $< -o $@
 
 $(OUT_DIR)/transitions_benchmark/transitions_wasm_lfence.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
-	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-only-sandbox-isolation $< -o $@
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-breakout --spectre-disable-btbflush $< -o $@
 
-$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitch.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
-	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-disable-btbflush $< -o $@
+$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_oneway.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-breakout $< -o $@
 
-$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitchbtb.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
-	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi $< -o $@
+$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_twoway.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-breakout --spectre-stop-sbx-poisoning --spectre-stop-host-poisoning $< -o $@
 
 $(OUT_DIR)/transitions_benchmark/transitions_wasm: $(OUT_DIR)/transitions_benchmark/transitions_wasm_stock.so \
 													$(OUT_DIR)/transitions_benchmark/transitions_wasm_lfence.so \
-													$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitch.so \
-													$(OUT_DIR)/transitions_benchmark/transitions_wasm_coreswitchbtb.so
+													$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_oneway.so \
+													$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_twoway.so
 	touch $@
 
 .PHONY: $(OUT_DIR)/transitions_benchmark/release/libtransitions.so
@@ -242,16 +278,6 @@ build_transitions: $(OUT_DIR)/transitions_benchmark/transitions_app $(OUT_DIR)/t
 
 build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_setup $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_setup build_cettests build_transitions
 
-test_phtbtb: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_phttobtb.so $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so
-	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_phttobtb.so
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-
-test_cfi: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_cfi.so $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_spectre_cfi.so
-	$(RUN_WASM_SO_NOASLR) $(OUT_DIR)/basic_test/test_spectre_cfi.so
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_cfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-
 LOOPFLAGS=-funroll-loops -mllvm --unroll-runtime -mllvm --unroll-runtime-epilog
 #  -funroll-loops -mllvm -unroll-threshold=1000  -mllvm -unroll-max-percent-threshold-boost=10000
 #-mllvm -unroll-threshold=1 -mllvm -unroll-count=8
@@ -268,32 +294,56 @@ run_tests:
 	@echo "-------------------"
 	@echo "Basic Test"
 	@echo "-------------------"
+	# Stock
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_pinned.so
+	# Lfence
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_strawman.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_loadlfence.so
+	# Individual
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi_sbxbreakout.so
+	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet_sbxbreakout.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi_sbxpoisoning.so
+	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet_sbxpoisoning.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi_hostpoisoning.so
+	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet_hostpoisoning.so
+	# Full
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
+	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
+	# Probablistic
+	$(RUN_WASM_SO_ASLR) $(OUT_DIR)/basic_test/test_spectre_sfiaslr.so
+	# Some PHT protection primtives
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_blade.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_phttobtb.so
-	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_interlock.so
 	@echo "-------------------"
 	@echo "PNG Test"
 	@echo "-------------------"
-	cd libpng && $(OUT_DIR)/libpng_original/pngtest
 	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_strawman.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_loadlfence.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_blade.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
-	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png
-	-rm $(REPO_ROOT)/libpng/pngout.png
+	# Native
+	cd libpng && $(OUT_DIR)/libpng_original/pngtest && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	# Stock
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_pinned.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	# Lfence
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_strawman.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_loadlfence.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	# Individual
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi_sbxbreakout.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet_sbxbreakout.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi_sbxpoisoning.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet_sbxpoisoning.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi_hostpoisoning.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet_hostpoisoning.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	# Full
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	# Probablistic
+	cd libpng && $(RUN_WASM_SO_ASLR) $(OUT_DIR)/libpng/pngtest_spectre_sfiaslr.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	# Some PHT protection primtives
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_blade.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_interlock.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 	@echo "-------------------"
 
 test: run_tests
@@ -308,11 +358,10 @@ test_cet: build_cettests
 	@$(OUT_DIR)/cet_test/cet_branch_test_asm; if [ $$? -eq 0 ]; then echo "CET assembly: invalid jump succeeded..."; else echo "CET assembly: caught invalid jump!"; fi
 
 run_transitions:
-	# Need to set frequency on all cores as core switching sets affinities to either 0 or 1..7
 	if [ -x "$(shell command -v cpupower)" ]; then \
-		sudo cpupower -c 0,1,2,3,4,5,6,7 frequency-set --min 2700MHz --max 2700MHz; \
+		sudo cpupower -c 0 frequency-set --min 2700MHz --max 2700MHz; \
 	else \
-		sudo cpufreq-set -c 0,1,2,3,4,5,6,7 --min 2700MHz --max 2700MHz; \
+		sudo cpufreq-set -c 0 --min 2700MHz --max 2700MHz; \
 	fi
 	cd $(OUT_DIR)/transitions_benchmark && taskset -c 0 ./transitions_app | tee $(REPO_ROOT)/../benchmarks/transitions_$(shell date --iso=seconds).txt
 
