@@ -157,7 +157,13 @@ def get_merged_summary_spec2017(result_path, n):
 
 def normalize_times(times):
     normalized_times = defaultdict(dict)
-    base_times = times["wasm_lucet"]
+    if "Stock" in times:
+        base_times = times["Stock"]
+    elif "wasm_lucet" in times:
+        base_times = times["wasm_lucet"]
+    else:
+        raise Exception("Could not find baseline times to normalize against. Expected either 'Stock' or 'wasm_lucet'") 
+
     for bench in base_times:
         base_time = base_times[bench]
         for mitigation in times:
