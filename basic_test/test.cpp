@@ -1,4 +1,42 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
+#include <time.h>
+#include <stdint.h>
+
+extern "C"
+{
+    static void timespec_diff(struct timespec *start, struct timespec *stop,
+                    struct timespec *result)
+    {
+        if ((stop->tv_nsec - start->tv_nsec) < 0) {
+            result->tv_sec = stop->tv_sec - start->tv_sec - 1;
+            result->tv_nsec = stop->tv_nsec - start->tv_nsec + 1000000000;
+        } else {
+            result->tv_sec = stop->tv_sec - start->tv_sec;
+            result->tv_nsec = stop->tv_nsec - start->tv_nsec;
+        }
+
+        return;
+    }
+}
+
+#define ITERATIONS 10000000
+#define StartTimer(name) \
+    struct timespec tstart_##name={0,0}, tend_##name={0,0}; \
+    clock_gettime(CLOCK_MONOTONIC, &tstart_##name); \
+    do {} while (0)
+
+
+#define EndTimer(name) \
+    clock_gettime(CLOCK_MONOTONIC, &tend_##name); \
+    struct timespec timer_##name; \
+    timespec_diff(&tstart_##name, &tend_##name, &timer_##name); \
+    uint64_t totalTime_##name = (uint64_t)(timer_##name.tv_sec) * 1000000000  + timer_##name.tv_nsec; \
+    double time_##name = ((double)totalTime_##name) / ITERATIONS; \
+    printf(#name " took %.5f nanoseconds\n", time_##name); \
+    do {} while (0)
 
 typedef struct {
     int field1;
@@ -198,6 +236,56 @@ extern "C"
     {
         return a;
     }
+
+    // Any inner loops in C (not C++) functions with name starting with "spec_nestedFor" are index optimized not heap optimized
+    __attribute__((noinline))
+    unsigned int spec_nestedFor(const char* a) {
+        unsigned int ret = 0;
+        const char* copy = a;
+        while(*copy) {
+            copy++;
+        }
+        ret = copy - a;
+        return ret;
+    }
+
+    __attribute__((noinline))
+    unsigned int spec_NoOptNestedFor(const char* a) {
+        unsigned int ret = 0;
+        const char* copy = a;
+        while(*copy) {
+            copy++;
+        }
+        ret = copy - a;
+        return ret;
+    }
+
+    // Any inner loops in C (not C++) functions with name starting with "spec_nestedFor" are index optimized not heap optimized
+    __attribute__((noinline))
+    unsigned int spec_nestedFor2(const char* a, const char* b) {
+        unsigned int ret = 0;
+        const char* copy = a;
+        const char* copyB = b;
+        while(*copy && *copyB) {
+            copy++;
+            copyB++;
+        }
+        ret = copy - a;
+        return ret;
+    }
+
+    __attribute__((noinline))
+    unsigned int spec_NoOptNestedFor2(const char* a, const char* b) {
+        unsigned int ret = 0;
+        const char* copy = a;
+        const char* copyB = b;
+        while(*copy && *copyB) {
+            copy++;
+            copyB++;
+        }
+        ret = copy - a;
+        return ret;
+    }
 }
 
 int main(int argc, char** argv)
@@ -243,6 +331,144 @@ int main(int argc, char** argv)
         printf("Test6 failed\n");
         return -1;
     }
+
+    // Perf tests for index op
+
+    // Tests are of the form
+    // warmup heap mask --- run first
+    // test heap mask --- run first
+    // warmup index mask
+    // test index mask
+    // warmup heap mask --- run again to make sure we aren't biasing something weird
+    // test heap mask --- run again to make sure we aren't biasing something weird
+
+    const char* a =
+        "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        "StartTimer(test);"
+        "loop = spec_nestedFor(a, i, j);"
+        "EndTimer(test);"
+        "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        "StartTimer(test);"
+        "loop = spec_nestedFor(a, i, j);"
+        "EndTimer(test);"
+        "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        "StartTimer(test);"
+        "loop = spec_nestedFor(a, i, j);"
+        "EndTimer(test);"
+        // "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        // "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        // "StartTimer(test);"
+        // "loop = spec_nestedFor(a, i, j);"
+        // "EndTimer(test);"
+        // "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        // "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        // "StartTimer(test);"
+        // "loop = spec_nestedFor(a, i, j);"
+        // "EndTimer(test);"
+    ;
+
+    unsigned int loop;
+
+    {
+        StartTimer(warmup);
+        loop = spec_NoOptNestedFor(a);
+        EndTimer(warmup);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(test_strlen_heapmask_first);
+        loop = spec_NoOptNestedFor(a);
+        EndTimer(test_strlen_heapmask_first);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(warmup);
+        loop = spec_nestedFor(a);
+        EndTimer(warmup);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(test_strlen_indexmask);
+        loop = spec_nestedFor(a);
+        EndTimer(test_strlen_indexmask);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(warmup);
+        loop = spec_NoOptNestedFor(a);
+        EndTimer(warmup);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(test_strlen_heapmask_again_just_in_case);
+        loop = spec_NoOptNestedFor(a);
+        EndTimer(test_strlen_heapmask_again_just_in_case);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    printf("-----------------------Perf test 1 complete -------------------\n");
+
+    const char* b =
+        "if (spec_if2(2, 100) != 27) {"
+        "    printf(Test4 failed\n);"
+        "    return -1;"
+        "}"
+        "if (spec_if2(3, 100) != 27) {"
+        "    printf(Test5 failed\n);"
+        "    return -1;"
+        "}";
+
+    {
+        StartTimer(warmup);
+        loop = spec_NoOptNestedFor2(a, b);
+        EndTimer(warmup);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(test_strlen_heapmask_first);
+        loop = spec_NoOptNestedFor2(a, b);
+        EndTimer(test_strlen_heapmask_first);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(warmup);
+        loop = spec_nestedFor2(a, b);
+        EndTimer(warmup);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(test_strlen_indexmask);
+        loop = spec_nestedFor2(a, b);
+        EndTimer(test_strlen_indexmask);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(warmup);
+        loop = spec_NoOptNestedFor2(a, b);
+        EndTimer(warmup);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        StartTimer(test_strlen_heapmask_again_just_in_case);
+        loop = spec_NoOptNestedFor2(a, b);
+        EndTimer(test_strlen_heapmask_again_just_in_case);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    printf("-----------------------Perf test 2 complete -------------------\n");
 
     return 0;
 }

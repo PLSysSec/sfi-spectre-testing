@@ -365,6 +365,10 @@ test_cet: build_cettests
 	@echo "$(OUT_DIR)/cet_test/cet_branch_test_asm"
 	@$(OUT_DIR)/cet_test/cet_branch_test_asm; if [ $$? -eq 0 ]; then echo "CET assembly: invalid jump succeeded..."; else echo "CET assembly: caught invalid jump!"; fi
 
+test_interlock: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_spectre_interlock.so $(OUT_DIR)/libpng/pngtest.wasm $(OUT_DIR)/libpng/pngtest_unroll.wasm $(OUT_DIR)/libpng/pngtest_spectre_interlock.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_interlock.so
+	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_interlock.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+
 run_transitions:
 	if [ -x "$(shell command -v cpupower)" ]; then \
 		sudo cpupower -c 0 frequency-set --min 2700MHz --max 2700MHz; \
