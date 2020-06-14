@@ -9,6 +9,7 @@ typedef struct {
 extern "C"
 {
     const int spec_GL_int_val = 5;
+    const float spec_GL_float_val = 5.0;
     const char spec_GL_char_val[] = "Testing 123";
 
     __attribute__((noinline))
@@ -18,6 +19,16 @@ extern "C"
             return spec_GL_int_val;
         } else {
             return 7;
+        }
+    }
+
+    __attribute__((noinline))
+    float spec_singleBranchFloat(float val)
+    {
+        if (val > 0) {
+            return spec_GL_float_val;
+        } else {
+            return 7.0;
         }
     }
 
@@ -225,6 +236,11 @@ int main(int argc, char** argv)
     }
     if (spec_if2(3, 100) != 27) {
         printf("Test5 failed\n");
+        return -1;
+    }
+
+    if (spec_singleBranchFloat (1.0) > 6.5) {
+        printf("Test6 failed\n");
         return -1;
     }
 
