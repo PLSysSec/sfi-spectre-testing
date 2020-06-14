@@ -16,7 +16,7 @@ WASM_LIBM=/opt/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libm.a
 LUCET_COMMON_FLAGS=--bindings $(LUCET_SRC)/lucet-wasi/bindings.json --guard-size "4GiB" --min-reserved-size "4GiB" --max-reserved-size "4GiB"
 LUCET_TRANSITION_FLAGS=--bindings $(REPO_ROOT)/transitions_benchmark/bindings.json $(LUCET_COMMON_FLAGS)
 RUN_WASM_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
-RUN_WASM_SO_ASLR=$(RUN_WASM_SO) --spectre-mitigation-aslr
+ASLR=--spectre-mitigation-aslr
 WABT_BINS_FOLDER=$(REPO_ROOT)/../../wabt/bin
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
@@ -108,6 +108,11 @@ CET_CC := $(shell \
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation sfiaslr $< -o $@ && \
 	objdump -d $@ > $@.asm
 
+.PRECIOUS: %_spectre_cetaslr.so
+%_spectre_cetaslr.so: %.wasm $(LUCET)
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cetaslr $< -o $@ && \
+	objdump -d $@ > $@.asm
+
 .PRECIOUS: %_spectre_blade.so
 %_spectre_blade.so: %.wasm $(LUCET)
 	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-pht-mitigation blade --pinned-heap-reg $< -o $@ && \
@@ -138,6 +143,7 @@ CET_CC := $(shell \
 				%_spectre_sfi.so \
 				%_spectre_cet.so \
 				%_spectre_sfiaslr.so \
+				%_spectre_cetaslr.so \
 				%_spectre_blade.so \
 				%_spectre_phttobtb.so \
 				%_spectre_interlock.so
@@ -276,7 +282,7 @@ build_cettests: $(OUT_DIR)/cet_test/cet_branch_test $(OUT_DIR)/cet_test/cet_bran
 
 build_transitions: $(OUT_DIR)/transitions_benchmark/transitions_app $(OUT_DIR)/transitions_benchmark/transitions_wasm
 
-build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_setup $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_setup build_cettests build_transitions
+build: $(OUT_DIR) $(OUT_DIR)/basic_test/test_setup $(OUT_DIR)/libpng_original/png_test $(OUT_DIR)/libpng/pngtest_setup build_cettests
 
 LOOPFLAGS=-funroll-loops -mllvm --unroll-runtime -mllvm --unroll-runtime-epilog
 #  -funroll-loops -mllvm -unroll-threshold=1000  -mllvm -unroll-max-percent-threshold-boost=10000
@@ -311,7 +317,8 @@ run_tests:
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
 	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
 	# Probablistic
-	$(RUN_WASM_SO_ASLR) $(OUT_DIR)/basic_test/test_spectre_sfiaslr.so
+	$(RUN_WASM_SO) $(ASLR) $(OUT_DIR)/basic_test/test_spectre_sfiaslr.so
+	$(RUN_WASM_CET_SO) $(ASLR) $(OUT_DIR)/basic_test/test_spectre_cetaslr.so
 	# Some PHT protection primtives
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_blade.so
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_phttobtb.so
@@ -339,7 +346,8 @@ run_tests:
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_sfi.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 	# Probablistic
-	cd libpng && $(RUN_WASM_SO_ASLR) $(OUT_DIR)/libpng/pngtest_spectre_sfiaslr.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_SO) $(ASLR) $(OUT_DIR)/libpng/pngtest_spectre_sfiaslr.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_CET_SO) $(ASLR) $(OUT_DIR)/libpng/pngtest_spectre_cetaslr.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 	# Some PHT protection primtives
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_blade.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 	cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_phttobtb.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
