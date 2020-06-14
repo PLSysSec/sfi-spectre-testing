@@ -22,7 +22,7 @@ extern "C"
     }
 }
 
-#define ITERATIONS 10000000
+#define ITERATIONS 1000000
 #define StartTimer(name) \
     struct timespec tstart_##name={0,0}, tend_##name={0,0}; \
     clock_gettime(CLOCK_MONOTONIC, &tstart_##name); \
@@ -241,7 +241,7 @@ extern "C"
     __attribute__((noinline))
     unsigned int spec_nestedFor(const char* a) {
         unsigned int ret = 0;
-        const char* copy = a;
+        volatile const char* copy = a;
         while(*copy) {
             copy++;
         }
@@ -252,7 +252,7 @@ extern "C"
     __attribute__((noinline))
     unsigned int spec_NoOptNestedFor(const char* a) {
         unsigned int ret = 0;
-        const char* copy = a;
+        volatile const char* copy = a;
         while(*copy) {
             copy++;
         }
@@ -264,8 +264,8 @@ extern "C"
     __attribute__((noinline))
     unsigned int spec_nestedFor2(const char* a, const char* b) {
         unsigned int ret = 0;
-        const char* copy = a;
-        const char* copyB = b;
+        volatile const char* copy = a;
+        volatile const char* copyB = b;
         while(*copy && *copyB) {
             copy++;
             copyB++;
@@ -277,8 +277,8 @@ extern "C"
     __attribute__((noinline))
     unsigned int spec_NoOptNestedFor2(const char* a, const char* b) {
         unsigned int ret = 0;
-        const char* copy = a;
-        const char* copyB = b;
+        volatile const char* copy = a;
+        volatile const char* copyB = b;
         while(*copy && *copyB) {
             copy++;
             copyB++;
@@ -311,43 +311,49 @@ void indexMaskingTest1() {
     unsigned int loop;
 
     {
-        StartTimer(warmup);
-        loop = spec_NoOptNestedFor(a);
-        EndTimer(warmup);
-        printf("Loop ret: %u\n", loop);
+        // warmup
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor(a);
+        }
     }
 
     {
         StartTimer(test_strlen_heapmask_first);
-        loop = spec_NoOptNestedFor(a);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor(a);
+        }
         EndTimer(test_strlen_heapmask_first);
         printf("Loop ret: %u\n", loop);
     }
 
     {
-        StartTimer(warmup);
-        loop = spec_nestedFor(a);
-        EndTimer(warmup);
-        printf("Loop ret: %u\n", loop);
+        // warmup
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_nestedFor(a);
+        }
     }
 
     {
         StartTimer(test_strlen_indexmask);
-        loop = spec_nestedFor(a);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_nestedFor(a);
+        }
         EndTimer(test_strlen_indexmask);
         printf("Loop ret: %u\n", loop);
     }
 
     {
-        StartTimer(warmup);
-        loop = spec_NoOptNestedFor(a);
-        EndTimer(warmup);
-        printf("Loop ret: %u\n", loop);
+        // warmup
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor(a);
+        }
     }
 
     {
         StartTimer(test_strlen_heapmask_again_just_in_case);
-        loop = spec_NoOptNestedFor(a);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor(a);
+        }
         EndTimer(test_strlen_heapmask_again_just_in_case);
         printf("Loop ret: %u\n", loop);
     }
@@ -390,43 +396,47 @@ void indexMaskingTest2() {
     unsigned int loop;
 
     {
-        StartTimer(warmup);
+        // warmup
         loop = spec_NoOptNestedFor2(a, b);
-        EndTimer(warmup);
-        printf("Loop ret: %u\n", loop);
     }
 
     {
         StartTimer(test_strlen_heapmask_first);
-        loop = spec_NoOptNestedFor2(a, b);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor2(a, b);
+        }
         EndTimer(test_strlen_heapmask_first);
         printf("Loop ret: %u\n", loop);
     }
 
     {
-        StartTimer(warmup);
-        loop = spec_nestedFor2(a, b);
-        EndTimer(warmup);
-        printf("Loop ret: %u\n", loop);
+        // warmup
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_nestedFor2(a, b);
+        }
     }
 
     {
         StartTimer(test_strlen_indexmask);
-        loop = spec_nestedFor2(a, b);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_nestedFor2(a, b);
+        }
         EndTimer(test_strlen_indexmask);
         printf("Loop ret: %u\n", loop);
     }
 
     {
-        StartTimer(warmup);
-        loop = spec_NoOptNestedFor2(a, b);
-        EndTimer(warmup);
-        printf("Loop ret: %u\n", loop);
+        // warmup
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor2(a, b);
+        }
     }
 
     {
         StartTimer(test_strlen_heapmask_again_just_in_case);
-        loop = spec_NoOptNestedFor2(a, b);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor2(a, b);
+        }
         EndTimer(test_strlen_heapmask_again_just_in_case);
         printf("Loop ret: %u\n", loop);
     }
