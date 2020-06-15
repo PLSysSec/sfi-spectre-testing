@@ -369,6 +369,10 @@ test_interlock: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_unrol
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_interlock.so
 	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_interlock.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 
+test_mpk: $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_spectre_cet.so #  $(OUT_DIR)/libpng/pngtest_unroll.wasm $(OUT_DIR)/libpng/pngtest_spectre_cet.so
+	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
+	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_interlock.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+
 run_transitions:
 	if [ -x "$(shell command -v cpupower)" ]; then \
 		sudo cpupower -c 0 frequency-set --min 2700MHz --max 2700MHz; \
