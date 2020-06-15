@@ -286,6 +286,47 @@ extern "C"
         ret = copy - a;
         return ret;
     }
+
+    // Any inner loops in C (not C++) functions with name starting with "spec_nestedFor" are index optimized not heap optimized
+    __attribute__((noinline))
+    unsigned int spec_nestedFor3(const char* a, const char* b) {
+        unsigned int ret = 0;
+        volatile char scratchSpace[1000];
+        volatile const char* copy = a;
+        volatile const char* copyB = b;
+        while(*copy && *copyB) {
+            scratchSpace[*copy] = 1;
+            scratchSpace[*copy] = 2;
+            scratchSpace[*copy] = 3;
+            scratchSpace[*copyB] = 4;
+            scratchSpace[*copyB] = 5;
+            scratchSpace[*copyB] = 6;
+            copy++;
+            copyB++;
+        }
+        ret = copy - a;
+        return ret;
+    }
+
+    __attribute__((noinline))
+    unsigned int spec_NoOptNestedFor3(const char* a, const char* b) {
+        unsigned int ret = 0;
+        volatile char scratchSpace[1000];
+        volatile const char* copy = a;
+        volatile const char* copyB = b;
+        while(*copy && *copyB) {
+            scratchSpace[*copy] = 1;
+            scratchSpace[*copy] = 2;
+            scratchSpace[*copy] = 3;
+            scratchSpace[*copyB] = 4;
+            scratchSpace[*copyB] = 5;
+            scratchSpace[*copyB] = 6;
+            copy++;
+            copyB++;
+        }
+        ret = copy - a;
+        return ret;
+    }
 }
 
 void indexMaskingTest1() {
@@ -444,6 +485,88 @@ void indexMaskingTest2() {
     printf("-----------------------Perf test 2 complete -------------------\n");
 }
 
+
+void indexMaskingTest3() {
+
+    const char* a =
+        "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        "StartTimer(test);"
+        "loop = spec_nestedFor(a, i, j);"
+        "EndTimer(test);"
+        "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        "StartTimer(test);"
+        "loop = spec_nestedFor(a, i, j);"
+        "EndTimer(test);"
+        "A long string to test for strlength static void timespec_diff(struct timespec *start, struct timespec *stop, "
+        "if ((stop->tv_nsec - start->tv_nsec) < 0) {"
+        "StartTimer(test);"
+        "loop = spec_nestedFor(a, i, j);"
+        "EndTimer(test);"
+    ;
+
+    const char* b =
+        "if (spec_if2(2, 100) != 27) {"
+        "    printf(Test4 failed\n);"
+        "    return -1;"
+        "}"
+        "if (spec_if2(3, 100) != 27) {"
+        "    printf(Test5 failed\n);"
+        "    return -1;"
+        "}";
+
+    unsigned int loop;
+
+    {
+        // warmup
+        loop = spec_NoOptNestedFor2(a, b);
+    }
+
+    {
+        StartTimer(test_strlen_heapmask_first);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor2(a, b);
+        }
+        EndTimer(test_strlen_heapmask_first);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        // warmup
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_nestedFor2(a, b);
+        }
+    }
+
+    {
+        StartTimer(test_strlen_indexmask);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_nestedFor2(a, b);
+        }
+        EndTimer(test_strlen_indexmask);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    {
+        // warmup
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor2(a, b);
+        }
+    }
+
+    {
+        StartTimer(test_strlen_heapmask_again_just_in_case);
+        for (int i = 0; i < ITERATIONS; i++) {
+            loop = spec_NoOptNestedFor2(a, b);
+        }
+        EndTimer(test_strlen_heapmask_again_just_in_case);
+        printf("Loop ret: %u\n", loop);
+    }
+
+    printf("-----------------------Perf test 3 complete -------------------\n");
+}
+
 int main(int argc, char** argv)
 {
     int val = spec_singleBranch(argc);
@@ -500,6 +623,7 @@ int main(int argc, char** argv)
 
     indexMaskingTest1();
     indexMaskingTest2();
+    indexMaskingTest3();
 
 
     return 0;
