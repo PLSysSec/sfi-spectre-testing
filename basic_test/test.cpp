@@ -621,9 +621,9 @@ int main(int argc, char** argv)
     // warmup heap mask --- run again to make sure we aren't biasing something weird
     // test heap mask --- run again to make sure we aren't biasing something weird
 
-    indexMaskingTest1();
-    indexMaskingTest2();
-    indexMaskingTest3();
+    // indexMaskingTest1();
+    // indexMaskingTest2();
+    // indexMaskingTest3();
 
 
     return 0;
