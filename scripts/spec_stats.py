@@ -58,6 +58,7 @@ def summarise(input_path, spec2017=False):
             if ".reported_time" in line:
                 name = line.split('.')[3]
                 success_code = line.split()[-1]
+                print(success_code)
                 times[name] = float(success_code)
         if ext_label in line:
                 mitigation_name = line.split()[1]
@@ -111,7 +112,11 @@ def make_graph(all_times, output_path, use_percent=False):
 
     ax.set_xticklabels(labels)
     ax.legend( tuple(rects), all_times.keys() )
-    fig.subplots_adjust(bottom=0.25)
+    #fig.subplots_adjust(bottom=0.25)
+    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+            hspace = 0, wspace = 0)
+    plt.margins(0,0)
+
 
     #clear any old data
     with open(output_path + ".stats", "w+") as myfile:
@@ -124,7 +129,7 @@ def make_graph(all_times, output_path, use_percent=False):
             myfile.write(f"{mitigations[i]} geomean = {result_geomean} {mitigations[i]} median = {result_median}\n")
 
     plt.tight_layout()
-    plt.savefig(output_path + ".pdf", format="pdf")
+    plt.savefig(output_path + ".pdf", format="pdf", bbox_inches="tight", pad_inches=0)
 
 
 def get_merged_summary(result_path, n):
@@ -261,6 +266,19 @@ def parse_bench_filter(s):
 
     return d
 
+def get_geomean_times(d):
+    print(d)
+    d_geomean = defaultdict(list)
+    for times in d.values():
+        for name,t in times.items():
+            d_geomean[name].append(t)
+    
+    geomeans = {}
+    for name,times in d_geomean.items():
+        geomeans[name] = geomean(times)
+    
+    return geomeans
+
 class BenchFilter(object):
         """docstring for BenchFilter"""
         def __init__(self, s):
@@ -280,11 +298,13 @@ class BenchFilter(object):
             for alias in bench_aliases:
                 times = normalized_times[alias.name]
                 d[alias.aliased_as] = times
+            d["Geomean"] = get_geomean_times(d)
             return d
 
         def partition_benches(self, normalized_times):
             for output_path, bench_aliases in self.filter.items():
                 partitioned_benches = self.partition_one(normalized_times, bench_aliases)
+                print("=========>", partitioned_benches, output_path)
                 yield partitioned_benches, output_path
 
         def __str__(self):
