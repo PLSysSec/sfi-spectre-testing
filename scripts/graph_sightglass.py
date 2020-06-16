@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from matplotlib.ticker import FuncFormatter
-#import argparse
+from collections import defaultdict
 
 def median(lst):
     n = len(lst)
@@ -65,8 +65,23 @@ def get_all_benches(bencheset):
     # Remove reference implementation from graphs
     final_benches = sorted([bench for bench in final_benches if not bench[1].startswith("1.")])
     #print("All benches:")
-    #for thing in final_benches:
-    #  print(thing)
+
+    benchmap = defaultdict(list)
+    for bench in final_benches:
+        #print(bench)
+        name,_,t = bench
+        benchmap[name].append(t)
+
+    print(benchmap)
+    for name,times in benchmap.items():
+        #print(name, geomean(times))
+        final_benches.append([name, "99.Geomean", geomean(times)])
+        
+    final_benches = sorted(final_benches)
+    #assert(len(final_benches) % 28 == 0)
+    #print(len(final_benches) / 28)
+    for bench in final_benches:
+        print(bench)
     return final_benches 
     
 def load_benches_from_files(filenames):
@@ -74,18 +89,18 @@ def load_benches_from_files(filenames):
     # 1. get data from supplied filenames
     bencheset = [load_benches(filename) for filename in filenames]
     nset = [compute_n(benches) for benches in bencheset]
-   
+    print("==========>", nset)
     all_benches = []
     all_n = sum(nset)
     # 2. Process and normalize data
     all_benches = get_all_benches(bencheset)
-    return all_n-1,all_benches # account for the removed reference
+    return all_n,all_benches # n stays same since we remove reference but add geomean
 
 def main(filenames, use_percent=False):
 
     #filenames = sys.argv[1:]
     all_n,all_benches = load_benches_from_files(filenames)
-    
+    #print(all_n)
     filename_base = "/".join(filenames[0].split("/")[:-1]) + "/"
     # 3. generate graph
     fig = plt.figure()
@@ -100,6 +115,7 @@ def empty_vals(n):
 def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     #for bench in benches:
     #  print(bench)
+    print(n)
     idx = 0
     labels = []
     implementations = []    
@@ -135,6 +151,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     labels = tuple(labels)
 
     rects = []
+    print(vals)
     for idx,val in enumerate(vals):
       rects.append(ax.bar(ind + width*idx, val, width))
 
@@ -153,7 +170,10 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
     ax.legend( tuple(rects), implementations )
-    fig.subplots_adjust(bottom=0.25)
+    #fig.subplots_adjust(bottom=0.05)
+    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
+            hspace = 0, wspace = 0)
+    plt.margins(0,0)
 
     # Record summary stats and save file
     for i in range(n):
@@ -163,7 +183,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
           myfile.write(f"{implementations[i]} geomean = {result_geomean} {implementations[i]} median = {result_median}\n")
 
     plt.tight_layout()
-    plt.savefig(outfile, format="pdf")
+    plt.savefig(outfile, format="pdf", bbox_inches="tight", pad_inches=0)
 
 
 
