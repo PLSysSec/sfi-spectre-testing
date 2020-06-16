@@ -369,9 +369,9 @@ test_interlock: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_unrol
 	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_interlock.so
 	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_interlock.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 
-test_mpk: $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_spectre_cet.so #  $(OUT_DIR)/libpng/pngtest_unroll.wasm $(OUT_DIR)/libpng/pngtest_spectre_cet.so
+test_mpk: $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_spectre_cet.so $(OUT_DIR)/libpng/pngtest_unroll.wasm $(OUT_DIR)/libpng/pngtest_spectre_cet.so
 	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_cet.so
-	# cd libpng && $(RUN_WASM_SO) $(OUT_DIR)/libpng/pngtest_spectre_interlock.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
+	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 
 test_sfi: $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_spectre_sfi.so
 	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
