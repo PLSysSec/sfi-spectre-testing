@@ -157,19 +157,45 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
 
     # Clean up graph
     ax.set_xlabel('Sightglass Benchmarks')
-    ax.set_ylabel('Relative Execution Time')
+    if use_percent:
+         ax.set_ylabel('Execution overhead')
+    else:
+        ax.set_ylabel('Relative Execution Time')
     ax.set_xticks(ind+width)
     plt.xticks(rotation=90)
 
     plt.axhline(y=1.0, color='black', linestyle='dashed')
-    plt.ylim(ymin=.8)
+
+    plt.ylim(ymin=.5)
+    ymax = 3.0
+    #if use_percent:
+    #    ymax = ymax + 1.0
+    plt.ylim(ymax=ymax + 0.1)
+    plt.axhline(y=ymax, color='black', linewidth=0.75)
+    #print( "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", plt.gca().spines["top"].set_visible("false"))
+    plt.gca().spines["top"].set_visible(False)
+    #print("usePercent vals = ", vals)
+    for vidx,impl in enumerate(vals):
+        for benchnum,xstart in enumerate(ind):
+            #print(impl[benchnum])
+            if impl[benchnum] < ymax:
+                continue
+            #print("continuing")
+            vlabel = '{:.0%}'.format(impl[benchnum]-1.0)
+            # ind = benchmar # (start of bars) 
+            #print("label ================= ", impl, ind, width, vidx, ind + width*vidx)
+            plt.annotate(vlabel,   # this is the text
+                (xstart + width*vidx, ymax + 0.1),  
+                textcoords="offset points", # how to position the text
+                xytext=(0, (3 if benchnum % 2 == 0 else 8) ), # distance from text to points (x,y)
+                ha='center', size=5.5) # horizontal alignment can be left, right or
 
     if use_percent:
       ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0))) 
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
-    ax.legend( tuple(rects), implementations )
+    ax.legend( tuple(rects), implementations, prop={'size': 5.5} )
     #fig.subplots_adjust(bottom=0.05)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
             hspace = 0, wspace = 0)
