@@ -265,7 +265,7 @@ def parse_bench_filter(s):
         d[out_path] = parsed_aliases
 
     return d
-
+'''
 def get_geomean_times(d):
     print(d)
     d_geomean = defaultdict(list)
@@ -278,6 +278,7 @@ def get_geomean_times(d):
         geomeans[name] = geomean(times)
     
     return geomeans
+'''
 
 class BenchFilter(object):
         """docstring for BenchFilter"""
@@ -297,8 +298,10 @@ class BenchFilter(object):
             d = {}
             for alias in bench_aliases:
                 times = normalized_times[alias.name]
+                #print("<><><><><><><><><>",alias, geomean(list(times.values())))
+                times["Geomean"] = geomean(list(times.values()))
                 d[alias.aliased_as] = times
-            d["Geomean"] = get_geomean_times(d)
+            #d["Geomean"] = get_geomean_times(d)
             return d
 
         def partition_benches(self, normalized_times):

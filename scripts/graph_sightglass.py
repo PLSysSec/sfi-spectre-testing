@@ -69,13 +69,13 @@ def get_all_benches(bencheset):
     benchmap = defaultdict(list)
     for bench in final_benches:
         #print(bench)
-        name,_,t = bench
-        benchmap[name].append(t)
+        _,impl,t = bench
+        benchmap[impl].append(t)
 
     print(benchmap)
-    for name,times in benchmap.items():
+    for impl,times in benchmap.items():
         #print(name, geomean(times))
-        final_benches.append([name, "99.Geomean", geomean(times)])
+        final_benches.append(["~Geomean", impl, geomean(times)])
         
     final_benches = sorted(final_benches)
     #assert(len(final_benches) % 28 == 0)
@@ -94,7 +94,7 @@ def load_benches_from_files(filenames):
     all_n = sum(nset)
     # 2. Process and normalize data
     all_benches = get_all_benches(bencheset)
-    return all_n,all_benches # n stays same since we remove reference but add geomean
+    return all_n-1,all_benches # n reduced by 1 since we remove reference 
 
 def main(filenames, use_percent=False):
 
