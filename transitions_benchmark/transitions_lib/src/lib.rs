@@ -89,9 +89,9 @@ pub extern "C" fn beginTest(iterations: u64) {
     lucet_runtime::lucet_internal_ensure_linked();
     lucet_wasi::export_wasi_funcs();
 
-    start_tests_on_lib("Stock:", "./transitions_wasm_stock.so", iterations);
-    start_tests_on_lib("Lfence:", "./transitions_wasm_lfence.so", iterations);
-    start_tests_on_lib("BTBOneWay:", "./transitions_wasm_btb_oneway.so", iterations);
-    start_tests_on_lib("BTBTwoWay:", "./transitions_wasm_btb_twoway.so", iterations);
+    start_tests_on_lib("Stock:", "./transitions_stock.so", iterations);
+    start_tests_on_lib("CetFull:", "./transitions_cetfull.so", iterations);
+    start_tests_on_lib("CETAslr:", "./transitions_cetaslr.so", iterations);
+    start_tests_on_lib("SFI:", "./transitions_sfi.so", iterations);
     println!("Successful");
 }

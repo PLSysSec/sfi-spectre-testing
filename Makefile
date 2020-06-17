@@ -247,22 +247,22 @@ $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm: transitions_benchmark/wa
 	mkdir -p $(OUT_DIR)/transitions_benchmark
 	$(WASM_CLANG) $(WASM_CFLAGS) $(WASM_LDFLAGS) -Wl,--allow-undefined $< -o $@
 
-$(OUT_DIR)/transitions_benchmark/transitions_wasm_stock.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+$(OUT_DIR)/transitions_benchmark/transitions_stock.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
 	$(LUCET) $(LUCET_TRANSITION_FLAGS) $< -o $@
 
-$(OUT_DIR)/transitions_benchmark/transitions_wasm_lfence.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+$(OUT_DIR)/transitions_benchmark/transitions_cetfull.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
 	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-breakout --spectre-disable-btbflush $< -o $@
 
-$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_oneway.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+$(OUT_DIR)/transitions_benchmark/transitions_cetaslr.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
 	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-breakout $< -o $@
 
-$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_twoway.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
-	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi --spectre-stop-sbx-breakout --spectre-stop-sbx-poisoning --spectre-stop-host-poisoning $< -o $@
+$(OUT_DIR)/transitions_benchmark/transitions_sfi.so: $(OUT_DIR)/transitions_benchmark/transitions_wasm.wasm
+	$(LUCET) $(LUCET_TRANSITION_FLAGS) --spectre-mitigation sfi $< -o $@
 
-$(OUT_DIR)/transitions_benchmark/transitions_wasm: $(OUT_DIR)/transitions_benchmark/transitions_wasm_stock.so \
-													$(OUT_DIR)/transitions_benchmark/transitions_wasm_lfence.so \
-													$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_oneway.so \
-													$(OUT_DIR)/transitions_benchmark/transitions_wasm_btb_twoway.so
+$(OUT_DIR)/transitions_benchmark/transitions_wasm: $(OUT_DIR)/transitions_benchmark/transitions_stock.so \
+													$(OUT_DIR)/transitions_benchmark/transitions_cetfull.so \
+													$(OUT_DIR)/transitions_benchmark/transitions_cetaslr.so \
+													$(OUT_DIR)/transitions_benchmark/transitions_sfi.so
 	touch $@
 
 .PHONY: $(OUT_DIR)/transitions_benchmark/release/libtransitions.so
