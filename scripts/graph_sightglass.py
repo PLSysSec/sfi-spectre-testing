@@ -195,7 +195,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
-    ax.legend( tuple(rects), implementations, prop={'size': 5.5} )
+    ax.legend( tuple(rects), implementations, prop={'size': 5.5}, loc=(.84,.75) )
     #fig.subplots_adjust(bottom=0.05)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
             hspace = 0, wspace = 0)
