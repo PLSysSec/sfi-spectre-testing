@@ -23,9 +23,12 @@ WABT_BINS_FOLDER=$(REPO_ROOT)/../../wabt/bin
 ifdef REALLY_USE_CET
 	RUN_WASM_CET_SO=$(LUCET_SRC)/target-cet/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 	CET_CFLAGS:=-fcf-protection=full
+	MPK_FLAGS=
 else
 	RUN_WASM_CET_SO=$(LUCET_SRC)/target/debug/lucet-wasi --heap-address-space "8GiB" --max-heap-size "4GiB" --stack-size "8MiB" --dir /:/
 	CET_CFLAGS:=
+	# yes in know cet is not mpk, but dont want add a new flag
+	MPK_FLAGS=--spectre-disable-mpk
 endif
 
 export RUST_BACKTRACE=1
@@ -68,7 +71,7 @@ CET_CC := $(shell \
 
 .PRECIOUS: %_spectre_cet_sbxbreakout.so
 %_spectre_cet_sbxbreakout.so: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --spectre-stop-sbx-breakout $< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $(MPK_FLAGS) --spectre-stop-sbx-breakout $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 # Sfi - sbx & host poisoning uses PHT_TO_BTB and should use loop unrolled modules
@@ -80,7 +83,7 @@ CET_CC := $(shell \
 
 .PRECIOUS: %_spectre_cet_sbxpoisoning.so
 %_spectre_cet_sbxpoisoning.so: %_unroll.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --spectre-stop-sbx-poisoning $< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $(MPK_FLAGS) --spectre-stop-sbx-poisoning $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_sfi_hostpoisoning.so
@@ -90,7 +93,7 @@ CET_CC := $(shell \
 
 .PRECIOUS: %_spectre_cet_hostpoisoning.so
 %_spectre_cet_hostpoisoning.so: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet --spectre-stop-host-poisoning $< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $(MPK_FLAGS) --spectre-stop-host-poisoning $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_sfi.so
@@ -100,7 +103,7 @@ CET_CC := $(shell \
 
 .PRECIOUS: %_spectre_cet.so
 %_spectre_cet.so: %_unroll.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cet $(MPK_FLAGS) $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_sfiaslr.so
@@ -110,7 +113,7 @@ CET_CC := $(shell \
 
 .PRECIOUS: %_spectre_cetaslr.so
 %_spectre_cetaslr.so: %.wasm $(LUCET)
-	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cetaslr $< -o $@ && \
+	$(LUCET) $(LUCET_COMMON_FLAGS) --spectre-mitigation cetaslr $(MPK_FLAGS) $< -o $@ && \
 	objdump -d $@ > $@.asm
 
 .PRECIOUS: %_spectre_blade.so
@@ -374,7 +377,10 @@ test_mpk: $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_spec
 	cd libpng && $(RUN_WASM_CET_SO) $(OUT_DIR)/libpng/pngtest_spectre_cet.so $(REPO_ROOT)/libpng/pngtest.png $(REPO_ROOT)/libpng/pngout.png && rm -rf $(REPO_ROOT)/libpng/pngout.png
 
 test_sfi: $(OUT_DIR)/basic_test/test_unroll.wasm $(OUT_DIR)/basic_test/test_spectre_sfi.so
-	$(RUN_WASM_CET_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
+	$(RUN_WASM_SO) $(OUT_DIR)/basic_test/test_spectre_sfi.so
+
+test_sfi_aslr: $(OUT_DIR)/basic_test/test.wasm $(OUT_DIR)/basic_test/test_spectre_sfiaslr.so
+	$(RUN_WASM_SO) $(ASLR) $(OUT_DIR)/basic_test/test_spectre_sfiaslr.so
 
 run_transitions:
 	if [ -x "$(shell command -v cpupower)" ]; then \
