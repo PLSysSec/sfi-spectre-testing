@@ -46,9 +46,21 @@ typedef struct {
 
 extern "C"
 {
-    const int spec_GL_int_val = 5;
+    volatile int spec_GL_int_val = 5;
     const float spec_GL_float_val = 5.0;
     const char spec_GL_char_val[] = "Testing 123";
+
+    __attribute__((noinline))
+    int spec_GL(int val)
+    {
+        return spec_GL_int_val;
+    }
+
+    __attribute__((noinline))
+    int spec_CallIndirect(int (*fn)())
+    {
+        return fn();
+    }
 
     __attribute__((noinline))
     int spec_singleBranch(int val)
