@@ -99,13 +99,13 @@ def make_graph(all_times, output_path, use_percent=False):
       rects.append(ax.bar(ind + width*idx, val, width))
 
 
-    ax.set_xlabel('Spec2006 Benchmarks')
-    ax.set_ylabel('Relative Execution Time')
+    #ax.set_xlabel('Spec2006 Benchmarks')
+    ax.set_ylabel('Execution overhead')
     ax.set_xticks(ind+width)
     plt.xticks(rotation=90)
 
     plt.axhline(y=1.0, color='black', linestyle='dashed')
-    plt.ylim(ymin=.8)
+    plt.ylim(ymin=.6)
 
     if use_percent:
         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0)))

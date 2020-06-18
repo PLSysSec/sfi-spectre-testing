@@ -156,7 +156,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
       rects.append(ax.bar(ind + width*idx, val, width))
 
     # Clean up graph
-    ax.set_xlabel('Sightglass Benchmarks')
+    #ax.set_xlabel('Sightglass Benchmarks')
     if use_percent:
          ax.set_ylabel('Execution overhead')
     else:
@@ -167,7 +167,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     plt.axhline(y=1.0, color='black', linestyle='dashed')
 
     plt.ylim(ymin=.5)
-    ymax = 3.0
+    ymax = 3.5
     #if use_percent:
     #    ymax = ymax + 1.0
     plt.ylim(ymax=ymax + 0.1)
@@ -187,15 +187,15 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
             plt.annotate(vlabel,   # this is the text
                 (xstart + width*vidx, ymax + 0.1),  
                 textcoords="offset points", # how to position the text
-                xytext=(0, (3 if benchnum % 2 == 0 else 8) ), # distance from text to points (x,y)
-                ha='center', size=5.5) # horizontal alignment can be left, right or
+                xytext=(0, (3 if benchnum % 2 == 0 else 12) ), # distance from text to points (x,y)
+                ha='center', size=8.5) # horizontal alignment can be left, right or
 
     if use_percent:
       ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0))) 
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
-    ax.legend( tuple(rects), implementations, prop={'size': 5.5}, loc=(.84,.75) )
+    ax.legend( tuple(rects), implementations, prop={'size': 8.5}, loc=(0.01,.67) )
     #fig.subplots_adjust(bottom=0.05)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
             hspace = 0, wspace = 0)
