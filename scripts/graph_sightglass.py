@@ -168,6 +168,8 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
 
     plt.ylim(ymin=.5)
     ymax = 3.5
+    if not use_percent:
+      ymax = 30
     #if use_percent:
     #    ymax = ymax + 1.0
     plt.ylim(ymax=ymax + 0.1)
@@ -195,7 +197,10 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
-    ax.legend( tuple(rects), implementations, prop={'size': 8.5}, loc=(0.01,.67) )
+    legend_loc=(0.01,.67)
+    if not use_percent:
+      legend_loc=(0.01,.77)
+    ax.legend( tuple(rects), implementations, prop={'size': 8.5}, loc=legend_loc )
     #fig.subplots_adjust(bottom=0.05)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
             hspace = 0, wspace = 0)
