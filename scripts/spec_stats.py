@@ -79,7 +79,7 @@ def make_graph(all_times, output_path, use_percent=False):
     print("Making graph! all_times = " )
     for name, times in all_times.items():
         print(name, times)
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6.1,4))
     num_mitigations = len(all_times)
     num_benches = len(next(iter(all_times.values()))) # get any element
     mitigations = list(all_times.keys())
@@ -125,8 +125,10 @@ def make_graph(all_times, output_path, use_percent=False):
     for i in range(num_mitigations):
         result_geomean = geomean(vals[i])
         result_median = median(vals[i])
+        result_min = min(vals[i])
+        result_max = max(vals[i])
         with open(output_path + ".stats", "a+") as myfile:
-            myfile.write(f"{mitigations[i]} geomean = {result_geomean} {mitigations[i]} median = {result_median}\n")
+            myfile.write(f"{mitigations[i]} geomean = {result_geomean} {mitigations[i]} median = {result_median} min = {result_min} max = {result_max}\n")
 
     plt.tight_layout()
     plt.savefig(output_path + ".pdf", format="pdf", bbox_inches="tight", pad_inches=0)
@@ -167,12 +169,12 @@ def normalize_times(times):
     elif "wasm_lucet" in times:
         base_times = times["wasm_lucet"]
     else:
-        raise Exception("Could not find baseline times to normalize against. Expected either 'Stock' or 'wasm_lucet'") 
+        raise Exception("Could not find baseline times to normalize against. Expected either 'Stock' or 'wasm_lucet'. Got " + str(times.keys()))
 
     for bench in base_times:
         base_time = base_times[bench]
         for mitigation in times:
-            normalized_times[mitigation][bench] = times[mitigation][bench] / base_time 
+            normalized_times[mitigation][bench] = times[mitigation][bench] / base_time
 
     return dict(normalized_times)
 
