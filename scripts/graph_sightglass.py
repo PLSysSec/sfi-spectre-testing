@@ -103,7 +103,7 @@ def main(filenames, use_percent=False):
     #print(all_n)
     filename_base = "/".join(filenames[0].split("/")[:-1]) + "/"
     # 3. generate graph
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6.1,3.5))
     make_graph(all_benches, all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt", use_percent=use_percent)
    
 def empty_vals(n):
@@ -197,10 +197,12 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
-    legend_loc=(0.01,.67)
+    legend_loc=(0.005,0.8)
+    ncol_val=2
     if not use_percent:
-      legend_loc=(0.01,.77)
-    ax.legend( tuple(rects), implementations, prop={'size': 8.5}, loc=legend_loc )
+      legend_loc=(0.005,.73)
+      ncol_val=1
+    ax.legend( tuple(rects), implementations, prop={'size': 8.5}, loc=legend_loc,ncol=ncol_val )
     #fig.subplots_adjust(bottom=0.05)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
             hspace = 0, wspace = 0)
