@@ -79,7 +79,7 @@ def make_graph(all_times, output_path, use_percent=False):
     print("Making graph! all_times = " )
     for name, times in all_times.items():
         print(name, times)
-    fig = plt.figure(figsize=(6.1,4))
+    fig = plt.figure(figsize=(6.1,3))
     num_mitigations = len(all_times)
     num_benches = len(next(iter(all_times.values()))) # get any element
     mitigations = list(all_times.keys())
@@ -111,7 +111,10 @@ def make_graph(all_times, output_path, use_percent=False):
         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0)))
 
     ax.set_xticklabels(labels)
-    ax.legend( tuple(rects), all_times.keys() )
+    if use_percent:
+        ax.legend( tuple(rects), all_times.keys(), ncol=2 )
+    else:
+        ax.legend( tuple(rects), all_times.keys(), bbox_to_anchor=(0.2,0.45))
     #fig.subplots_adjust(bottom=0.25)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
             hspace = 0, wspace = 0)
