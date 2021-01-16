@@ -1,3 +1,4 @@
+import os
 import sys
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -100,7 +101,10 @@ def make_graph(all_times, output_path, use_percent=False):
 
 
     #ax.set_xlabel('Spec2006 Benchmarks')
-    ax.set_ylabel('Execution overhead')
+    if use_percent:
+         ax.set_ylabel('Execution overhead')
+    else:
+        ax.set_ylabel('Relative execution time')
     ax.set_xticks(ind+width)
     plt.xticks(rotation=90)
 
@@ -120,10 +124,8 @@ def make_graph(all_times, output_path, use_percent=False):
             hspace = 0, wspace = 0)
     plt.margins(0,0)
 
-
-    #clear any old data
-    with open(output_path + ".stats", "w+") as myfile:
-        pass
+    if os.path.exists(output_path + ".stats"):
+        os.remove(output_path + ".stats")
 
     for i in range(num_mitigations):
         result_geomean = geomean(vals[i])

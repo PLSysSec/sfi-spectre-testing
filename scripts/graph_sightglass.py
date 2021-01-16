@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 import sys
 from matplotlib.ticker import FuncFormatter
 from collections import defaultdict
@@ -160,7 +161,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     if use_percent:
          ax.set_ylabel('Execution overhead')
     else:
-        ax.set_ylabel('Relative Execution Time')
+        ax.set_ylabel('Relative execution time')
     ax.set_xticks(ind+width)
     plt.xticks(rotation=90)
 
@@ -207,6 +208,9 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
             hspace = 0, wspace = 0)
     plt.margins(0,0)
+
+    if os.path.exists(statsfile):
+        os.remove(statsfile)
 
     # Record summary stats and save file
     for i in range(n):
