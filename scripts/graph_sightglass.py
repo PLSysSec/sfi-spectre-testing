@@ -28,10 +28,27 @@ def load_benches(filename):
     #  print(bench)
     return benches
 
-'''
-Count the number of implementations
-'''
+def map_impl(name):
+    """
+    Given the impl name found in the raw results, return the display name to use for the graph legend
+    """
+    if name == "Stock_Unrolled":
+        return "Stock-Unrolled"
+    elif name == "Sfi_Aslr":
+        return "SFI-ASLR"
+    elif name == "Cet_Aslr":
+        return "CET-ASLR"
+    elif name == "Sfi_Full":
+        return "SFI-Det"
+    elif name == "Cet_Full":
+        return "CET-Det"
+    else:
+        return name
+
 def compute_n(benches):
+  '''
+  Count the number of implementations
+  '''
   implementations = set()
   n = 0
   for bench in benches:
@@ -54,7 +71,7 @@ def get_all_benches(bencheset):
     ref_performance = {}
     for bench in all_benches:
       if bench[1].startswith("1."):
-        ref_performance[bench[0]] = float(bench[2]) 
+        ref_performance[bench[0]] = float(bench[2])
 
     #Normalize benchmarks
     final_benches = []
@@ -77,14 +94,14 @@ def get_all_benches(bencheset):
     for impl,times in benchmap.items():
         #print(name, geomean(times))
         final_benches.append(["~Geomean", impl, geomean(times)])
-        
+
     final_benches = sorted(final_benches)
     #assert(len(final_benches) % 28 == 0)
     #print(len(final_benches) / 28)
     for bench in final_benches:
         print(bench)
-    return final_benches 
-    
+    return final_benches
+
 def load_benches_from_files(filenames):
     #filenames = [filename for filename in sys.argv[1:]]
     # 1. get data from supplied filenames
@@ -95,7 +112,7 @@ def load_benches_from_files(filenames):
     all_n = sum(nset)
     # 2. Process and normalize data
     all_benches = get_all_benches(bencheset)
-    return all_n-1,all_benches # n reduced by 1 since we remove reference 
+    return all_n-1,all_benches # n reduced by 1 since we remove reference
 
 def main(filenames, use_percent=False):
 
@@ -106,7 +123,7 @@ def main(filenames, use_percent=False):
     # 3. generate graph
     fig = plt.figure(figsize=(6.1,3.5))
     make_graph(all_benches, all_n, fig, filename_base + "combined.pdf", filename_base + "combined_stats.txt", use_percent=use_percent)
-   
+
 def empty_vals(n):
   vals = []
   for jdx in range(n):
@@ -119,11 +136,11 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     print(n)
     idx = 0
     labels = []
-    implementations = []    
+    implementations = []
     vals = empty_vals(n)
 
     width = (1.0 / (n + 1))  # the width of the bars
-    
+
     ax = fig.add_subplot(111)
 
     plt.rcParams['pdf.fonttype'] = 42 # true type font
@@ -145,7 +162,8 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
           if idx % n == edx:
               vals[edx].append(ratio)
       idx += 1
-    
+
+    implementations = [map_impl(impl) for impl in implementations]
     print("Implementations Found: ", implementations)
     N = len(labels)
     ind = np.arange(N)
@@ -185,16 +203,16 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
                 continue
             #print("continuing")
             vlabel = '{:.0%}'.format(impl[benchnum]-1.0)
-            # ind = benchmar # (start of bars) 
+            # ind = benchmar # (start of bars)
             #print("label ================= ", impl, ind, width, vidx, ind + width*vidx)
             plt.annotate(vlabel,   # this is the text
-                (xstart + width*vidx, ymax + 0.1),  
+                (xstart + width*vidx, ymax + 0.1),
                 textcoords="offset points", # how to position the text
                 xytext=(0, (3 if benchnum % 2 == 0 else 12) ), # distance from text to points (x,y)
                 ha='center', size=8.5) # horizontal alignment can be left, right or
 
     if use_percent:
-      ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0))) 
+      ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0)))
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
@@ -205,7 +223,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
       ncol_val=1
     ax.legend( tuple(rects), implementations, prop={'size': 8.5}, loc=legend_loc,ncol=ncol_val )
     #fig.subplots_adjust(bottom=0.05)
-    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
+    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
             hspace = 0, wspace = 0)
     plt.margins(0,0)
 
@@ -221,8 +239,6 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
 
     plt.tight_layout()
     plt.savefig(outfile, format="pdf", bbox_inches="tight", pad_inches=0)
-
-
 
 def test3(filenames):
     f1,f2,f3 = filenames
@@ -255,7 +271,7 @@ if __name__== "__main__":
 
   if sys.argv[1] == "--usePercent":
     filenames = sys.argv[2:]
-    use_percent = True 
+    use_percent = True
   else:
     filenames = sys.argv[1:]
     use_percent = False
@@ -264,4 +280,3 @@ if __name__== "__main__":
       test3(filenames)
 
   main(filenames, use_percent=use_percent)
-
