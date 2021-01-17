@@ -96,13 +96,17 @@ def make_graph(all_times, output_path, use_percent=False):
     print(labels)
     print(vals)
 
+    # https://colorbrewer2.org/?type=qualitative&scheme=Dark2&n=5
+    colors = ['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e']
+
     rects = []
     for idx,val in enumerate(vals):
       if use_percent:
         val = [v - 1 for v in val]
-        rects.append(ax.bar(ind + width*idx, val, width, bottom=1))
+        bottom=1
       else:
-        rects.append(ax.bar(ind + width*idx, val, width))
+        bottom=0
+      rects.append(ax.bar(ind + width*idx, val, width, bottom=bottom, color=colors[idx]))
 
 
     #ax.set_xlabel('Spec2006 Benchmarks')

@@ -171,14 +171,18 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     ind = np.arange(N)
     labels = tuple(labels)
 
+    # https://colorbrewer2.org/?type=qualitative&scheme=Dark2&n=5
+    colors = ['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e']
+
     rects = []
     print(vals)
     for idx,val in enumerate(vals):
       if use_percent:
         val = [v - 1 for v in val]
-        rects.append(ax.bar(ind + width*idx, val, width, bottom=1))
+        bottom=1
       else:
-        rects.append(ax.bar(ind + width*idx, val, width))
+        bottom=0
+      rects.append(ax.bar(ind + width*idx, val, width, bottom=bottom, color=colors[idx]))
 
     # Clean up graph
     #ax.set_xlabel('Sightglass Benchmarks')
@@ -235,10 +239,10 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
     if use_percent:
-        legend_loc=(0.005,0.675)
+        legend_loc=(0.005,0.7)
         ncol_val=2
     else:
-        legend_loc=(0.005,.787)
+        legend_loc=(0.005,.805)
         ncol_val=2
     ax.legend( tuple(rects), implementations, prop={'size': 8.5, 'family': 'sans-serif'}, loc=legend_loc, ncol=ncol_val )
     #fig.subplots_adjust(bottom=0.05)
