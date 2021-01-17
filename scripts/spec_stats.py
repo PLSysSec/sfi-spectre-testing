@@ -4,7 +4,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, FixedLocator
+from matplotlib.transforms import Affine2D
 
 #prefix = "sfi-spectre-spec/result/"
 
@@ -97,7 +98,11 @@ def make_graph(all_times, output_path, use_percent=False):
 
     rects = []
     for idx,val in enumerate(vals):
-      rects.append(ax.bar(ind + width*idx, val, width))
+      if use_percent:
+        val = [v - 1 for v in val]
+        rects.append(ax.bar(ind + width*idx, val, width, bottom=1))
+      else:
+        rects.append(ax.bar(ind + width*idx, val, width))
 
 
     #ax.set_xlabel('Spec2006 Benchmarks')
@@ -106,21 +111,27 @@ def make_graph(all_times, output_path, use_percent=False):
     else:
         ax.set_ylabel('Relative execution time')
     ax.set_xticks(ind+width)
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
+    for lbl in ax.xaxis.get_majorticklabels():
+        lbl.set_transform(lbl.get_transform() + Affine2D().translate(-2, 0))
 
     plt.axhline(y=1.0, color='black', linestyle='dashed')
-    plt.ylim(ymin=.6)
+    plt.ylim(ymin=.5)
+    if not use_percent:
+        plt.ylim(ymin=0)
 
     if use_percent:
         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0)))
+        ax.yaxis.set_major_locator(FixedLocator(np.arange(-.5,10,.5)))
     else:
         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0f}×'.format(y)))
+        ax.yaxis.set_major_locator(FixedLocator([1] + list(range(5,25,5))))
 
     ax.set_xticklabels(labels)
     if use_percent:
-        ax.legend( tuple(rects), all_times.keys(), ncol=2 )
+        ax.legend( tuple(rects), all_times.keys(), ncol=2, loc=(.455, .59))
     else:
-        ax.legend( tuple(rects), all_times.keys(), bbox_to_anchor=(0.2,0.45))
+        ax.legend( tuple(rects), all_times.keys(), ncol=1, loc=(0.04, 0.59))
     #fig.subplots_adjust(bottom=0.25)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
             hspace = 0, wspace = 0)

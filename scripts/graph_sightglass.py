@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, FixedLocator
+from matplotlib.transforms import Affine2D
 from collections import defaultdict
 
 def median(lst):
@@ -91,11 +92,12 @@ def get_all_benches(bencheset):
         benchmap[impl].append(t)
 
     print(benchmap)
-    for impl,times in benchmap.items():
-        #print(name, geomean(times))
-        final_benches.append(["~Geomean", impl, geomean(times)])
 
     final_benches = sorted(final_benches)
+    for impl,times in benchmap.items():
+        #print(name, geomean(times))
+        final_benches.append(["Geomean", impl, geomean(times)])
+
     #assert(len(final_benches) % 28 == 0)
     #print(len(final_benches) / 28)
     for bench in final_benches:
@@ -172,7 +174,11 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     rects = []
     print(vals)
     for idx,val in enumerate(vals):
-      rects.append(ax.bar(ind + width*idx, val, width))
+      if use_percent:
+        val = [v - 1 for v in val]
+        rects.append(ax.bar(ind + width*idx, val, width, bottom=1))
+      else:
+        rects.append(ax.bar(ind + width*idx, val, width))
 
     # Clean up graph
     #ax.set_xlabel('Sightglass Benchmarks')
@@ -181,18 +187,23 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     else:
         ax.set_ylabel('Relative execution time')
     ax.set_xticks(ind+width)
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
+    ax.tick_params(axis='x', pad=0)
+    for lbl in ax.xaxis.get_majorticklabels():
+        lbl.set_transform(lbl.get_transform() + Affine2D().translate(-3, 0))
 
     plt.axhline(y=1.0, color='black', linestyle='dashed')
 
-    plt.ylim(ymin=.5)
+    plt.ylim(ymin=0.48)
     if use_percent:
-        ymax = 3.5
+        ymax = 4.1
     else:
         ymax = 28
     #if use_percent:
     #    ymax = ymax + 1.0
     plt.ylim(ymax=ymax + 0.1)
+    if not use_percent:
+        plt.ylim(ymin=0)
     plt.axhline(y=ymax, color='black', linewidth=0.75)
     #print( "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", plt.gca().spines["top"].set_visible("false"))
     plt.gca().spines["top"].set_visible(False)
@@ -219,16 +230,17 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
       ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0)))
     else:
       ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0f}×'.format(y)))
+      ax.yaxis.set_major_locator(FixedLocator([1] + list(range(5, 30, 5))))
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
     if use_percent:
-        legend_loc=(0.005,0.8)
+        legend_loc=(0.005,0.675)
         ncol_val=2
     else:
-        legend_loc=(0.67,.73)
-        ncol_val=1
-    ax.legend( tuple(rects), implementations, prop={'size': 8.5, 'family': 'sans-serif'}, loc=legend_loc,ncol=ncol_val )
+        legend_loc=(0.005,.787)
+        ncol_val=2
+    ax.legend( tuple(rects), implementations, prop={'size': 8.5, 'family': 'sans-serif'}, loc=legend_loc, ncol=ncol_val )
     #fig.subplots_adjust(bottom=0.05)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
             hspace = 0, wspace = 0)
