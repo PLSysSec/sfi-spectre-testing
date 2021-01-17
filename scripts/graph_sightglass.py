@@ -177,7 +177,7 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     # Clean up graph
     #ax.set_xlabel('Sightglass Benchmarks')
     if use_percent:
-         ax.set_ylabel('Execution overhead')
+        ax.set_ylabel('Execution overhead')
     else:
         ax.set_ylabel('Relative execution time')
     ax.set_xticks(ind+width)
@@ -186,9 +186,10 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     plt.axhline(y=1.0, color='black', linestyle='dashed')
 
     plt.ylim(ymin=.5)
-    ymax = 3.5
-    if not use_percent:
-      ymax = 30
+    if use_percent:
+        ymax = 3.5
+    else:
+        ymax = 28
     #if use_percent:
     #    ymax = ymax + 1.0
     plt.ylim(ymax=ymax + 0.1)
@@ -202,26 +203,32 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
             if impl[benchnum] < ymax:
                 continue
             #print("continuing")
-            vlabel = '{:.0%}'.format(impl[benchnum]-1.0)
+            if use_percent:
+              vlabel = '{:.0%}'.format(impl[benchnum]-1.0)
+            else:
+              vlabel = '{:.1f}×'.format(impl[benchnum])
             # ind = benchmar # (start of bars)
             #print("label ================= ", impl, ind, width, vidx, ind + width*vidx)
             plt.annotate(vlabel,   # this is the text
                 (xstart + width*vidx, ymax + 0.1),
                 textcoords="offset points", # how to position the text
                 xytext=(0, (3 if benchnum % 2 == 0 else 12) ), # distance from text to points (x,y)
-                ha='center', size=8.5) # horizontal alignment can be left, right or
+                ha='center', size=8.5, family='sans-serif') # horizontal alignment can be left, right or
 
     if use_percent:
       ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0)))
+    else:
+      ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0f}×'.format(y)))
 
     ax.set_xticklabels(labels)
     plt.locator_params(axis='y', nbins=10)
-    legend_loc=(0.005,0.8)
-    ncol_val=2
-    if not use_percent:
-      legend_loc=(0.005,.73)
-      ncol_val=1
-    ax.legend( tuple(rects), implementations, prop={'size': 8.5}, loc=legend_loc,ncol=ncol_val )
+    if use_percent:
+        legend_loc=(0.005,0.8)
+        ncol_val=2
+    else:
+        legend_loc=(0.67,.73)
+        ncol_val=1
+    ax.legend( tuple(rects), implementations, prop={'size': 8.5, 'family': 'sans-serif'}, loc=legend_loc,ncol=ncol_val )
     #fig.subplots_adjust(bottom=0.05)
     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
             hspace = 0, wspace = 0)

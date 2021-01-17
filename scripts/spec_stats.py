@@ -85,9 +85,9 @@ def make_graph(all_times, output_path, use_percent=False):
     num_benches = len(next(iter(all_times.values()))) # get any element
     mitigations = list(all_times.keys())
     width = (1.0 / ( (num_mitigations) + 1))        # the width of the bars
-    
+
     ax = fig.add_subplot(111)
-    
+
     vals = all_times_to_vals(all_times)
 
     ind = np.arange(num_benches)
@@ -113,6 +113,8 @@ def make_graph(all_times, output_path, use_percent=False):
 
     if use_percent:
         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y-1.0)))
+    else:
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0f}×'.format(y)))
 
     ax.set_xticklabels(labels)
     if use_percent:
@@ -191,12 +193,12 @@ def run(result_path, n, output_path):
         name,times = get_merged_summary(result_path, lock_num - n + idx + 1)
         print(name, times)
         all_times[name] = times
-   
+
     normalized_times = normalize_times(all_times)
-   
+
     #{mitigation name -> {}}      --- here is where we cut
     make_graph(normalized_times, output_path)
-  
+
 
 def run_w_filter(result_path, bench_filter, n, use_percent, spec2017=False, extra_spec2017_path=None, extra_spec2017_n=None):
     all_times = {}
@@ -279,11 +281,11 @@ def get_geomean_times(d):
     for times in d.values():
         for name,t in times.items():
             d_geomean[name].append(t)
-    
+
     geomeans = {}
     for name,times in d_geomean.items():
         geomeans[name] = geomean(times)
-    
+
     return geomeans
 '''
 
