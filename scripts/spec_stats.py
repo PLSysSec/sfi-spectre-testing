@@ -96,8 +96,8 @@ def make_graph(all_times, output_path, use_percent=False):
     print(labels)
     print(vals)
 
-    # https://colorbrewer2.org/?type=qualitative&scheme=Dark2&n=5
-    colors = ['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e']
+    # https://personal.sron.nl/~pault/data/colourschemes.pdf Section 2 figure 3
+    colors = ['#BBBBBB','#0077BB','#EE7733','#EE3377','#009988']
 
     rects = []
     for idx,val in enumerate(vals):
