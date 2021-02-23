@@ -89,6 +89,10 @@ def make_graph(all_times, output_path, use_percent=False):
 
     ax = fig.add_subplot(111)
 
+    plt.rcParams['pdf.fonttype'] = 42 # true type font
+    plt.rcParams['font.family'] = 'Times New Roman'
+    plt.rcParams['font.size'] = '8'
+
     vals = all_times_to_vals(all_times)
 
     ind = np.arange(num_benches)
