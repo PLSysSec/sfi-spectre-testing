@@ -101,11 +101,11 @@ def make_graph(all_times, output_path, use_percent=False):
 
     rects = []
     for idx,val in enumerate(vals):
-      if use_percent:
-        val = [v - 1 for v in val]
-        bottom=1
-      else:
-        bottom=0
+      # if use_percent:
+      val = [v - 1 for v in val]
+      bottom=1
+      # else:
+      #  bottom=0
       rects.append(ax.bar(ind + width*idx, val, width, bottom=bottom, color=colors[idx]))
 
 

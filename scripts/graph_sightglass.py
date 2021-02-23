@@ -177,11 +177,11 @@ def make_graph(benches, n, fig, outfile, statsfile, use_percent):
     rects = []
     print(vals)
     for idx,val in enumerate(vals):
-      if use_percent:
-        val = [v - 1 for v in val]
-        bottom=1
-      else:
-        bottom=0
+      # if use_percent:
+      val = [v - 1 for v in val]
+      bottom=1
+      # else:
+      #  bottom=0
       rects.append(ax.bar(ind + width*idx, val, width, bottom=bottom, color=colors[idx]))
 
     # Clean up graph
